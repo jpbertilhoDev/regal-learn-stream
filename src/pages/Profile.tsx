@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useAuth } from "@/hooks/useAuth";
-import { useProfile, useUpdateProfile, useChangePassword, useUserStats } from "@/hooks/useProfile";
+import { useProfile, useUpdateProfile, useChangePassword, useRequestVerificationCode, useVerifyCode, useUserStats } from "@/hooks/useProfile";
 import { useUploadFile } from "@/hooks/useUploadFile";
 import { Button } from "@/components/ui/button";
 import {
@@ -60,8 +60,13 @@ const passwordSchema = z.object({
   path: ["confirmPassword"],
 });
 
+const verificationSchema = z.object({
+  code: z.string().length(6, "O código deve ter 6 dígitos"),
+});
+
 type ProfileFormValues = z.infer<typeof profileSchema>;
 type PasswordFormValues = z.infer<typeof passwordSchema>;
+type VerificationFormValues = z.infer<typeof verificationSchema>;
 
 export default function Profile() {
   const navigate = useNavigate();
@@ -70,8 +75,12 @@ export default function Profile() {
   const { data: stats, isLoading: statsLoading } = useUserStats();
   const updateProfile = useUpdateProfile();
   const changePassword = useChangePassword();
+  const requestVerificationCode = useRequestVerificationCode();
+  const verifyCode = useVerifyCode();
   const { uploadFile } = useUploadFile();
   const [avatarPreview, setAvatarPreview] = useState<string>("");
+  const [showVerification, setShowVerification] = useState(false);
+  const [pendingPassword, setPendingPassword] = useState<string>("");
 
   // Calculate badges
   const badges = [
@@ -145,6 +154,13 @@ export default function Profile() {
     },
   });
 
+  const verificationForm = useForm<VerificationFormValues>({
+    resolver: zodResolver(verificationSchema),
+    defaultValues: {
+      code: "",
+    },
+  });
+
   const handleAvatarUpload = async (file: File) => {
     const { url, error } = await uploadFile(file, "avatars", user?.id);
     
@@ -174,11 +190,36 @@ export default function Profile() {
   };
 
   const onPasswordSubmit = async (data: PasswordFormValues) => {
-    changePassword.mutate(data.newPassword, {
-      onSuccess: () => {
-        passwordForm.reset();
-      },
-    });
+    // Store password and request verification code
+    setPendingPassword(data.newPassword);
+    await requestVerificationCode.mutateAsync("password_change");
+    setShowVerification(true);
+  };
+
+  const onVerificationSubmit = async (data: VerificationFormValues) => {
+    try {
+      // Verify the code
+      await verifyCode.mutateAsync({
+        code: data.code,
+        type: "password_change",
+      });
+
+      // If verified, change the password
+      await changePassword.mutateAsync(pendingPassword);
+      
+      // Reset forms and state
+      passwordForm.reset();
+      verificationForm.reset();
+      setShowVerification(false);
+      setPendingPassword("");
+      
+      toast({
+        title: "Senha alterada!",
+        description: "Sua senha foi atualizada com sucesso.",
+      });
+    } catch (error) {
+      // Error already handled by mutations
+    }
   };
 
   if (isLoading) {
@@ -354,66 +395,136 @@ export default function Profile() {
                 Segurança
               </CardTitle>
               <CardDescription>
-                Altere sua senha de acesso
+                Altere sua senha de acesso com verificação por email
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Form {...passwordForm}>
-                <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-6">
-                  <FormField
-                    control={passwordForm.control}
-                    name="newPassword"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Nova Senha</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="password" 
-                            placeholder="Digite sua nova senha"
-                            {...field} 
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+              {!showVerification ? (
+                <Form {...passwordForm}>
+                  <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-6">
+                    <FormField
+                      control={passwordForm.control}
+                      name="newPassword"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Nova Senha</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="password" 
+                              placeholder="Digite sua nova senha"
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-                  <FormField
-                    control={passwordForm.control}
-                    name="confirmPassword"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Confirmar Senha</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="password" 
-                            placeholder="Confirme sua nova senha"
-                            {...field} 
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                    <FormField
+                      control={passwordForm.control}
+                      name="confirmPassword"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Confirmar Senha</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="password" 
+                              placeholder="Confirme sua nova senha"
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-                  <div className="bg-muted/50 border border-border rounded-lg p-4">
-                    <p className="text-sm font-medium mb-2">Requisitos da senha:</p>
-                    <ul className="text-xs text-muted-foreground space-y-1 list-disc list-inside">
-                      <li>Mínimo de 8 caracteres</li>
-                      <li>Letra maiúscula e minúscula</li>
-                      <li>Pelo menos um número</li>
-                    </ul>
-                  </div>
+                    <div className="bg-muted/50 border border-border rounded-lg p-4">
+                      <p className="text-sm font-medium mb-2">Requisitos da senha:</p>
+                      <ul className="text-xs text-muted-foreground space-y-1 list-disc list-inside">
+                        <li>Mínimo de 8 caracteres</li>
+                        <li>Letra maiúscula e minúscula</li>
+                        <li>Pelo menos um número</li>
+                      </ul>
+                    </div>
 
-                  <Button
-                    type="submit"
-                    className="w-full"
-                    disabled={changePassword.isPending}
-                  >
-                    {changePassword.isPending ? "Alterando..." : "Alterar Senha"}
-                  </Button>
-                </form>
-              </Form>
+                    <Button
+                      type="submit"
+                      className="w-full"
+                      disabled={requestVerificationCode.isPending}
+                    >
+                      {requestVerificationCode.isPending ? "Enviando código..." : "Continuar"}
+                    </Button>
+                  </form>
+                </Form>
+              ) : (
+                <Form {...verificationForm}>
+                  <form onSubmit={verificationForm.handleSubmit(onVerificationSubmit)} className="space-y-6">
+                    <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900 rounded-lg p-4">
+                      <p className="text-sm text-blue-900 dark:text-blue-100">
+                        <strong>📧 Código enviado!</strong>
+                      </p>
+                      <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
+                        Enviamos um código de 6 dígitos para {user?.email}. O código expira em 10 minutos.
+                      </p>
+                    </div>
+
+                    <FormField
+                      control={verificationForm.control}
+                      name="code"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Código de Verificação</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="000000"
+                              maxLength={6}
+                              className="text-center text-2xl tracking-widest font-mono"
+                              {...field}
+                              onChange={(e) => {
+                                const value = e.target.value.replace(/\D/g, '');
+                                field.onChange(value);
+                              }}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="flex-1"
+                        onClick={() => {
+                          setShowVerification(false);
+                          verificationForm.reset();
+                          passwordForm.reset();
+                        }}
+                      >
+                        Cancelar
+                      </Button>
+                      <Button
+                        type="submit"
+                        className="flex-1"
+                        disabled={verifyCode.isPending}
+                      >
+                        {verifyCode.isPending ? "Verificando..." : "Confirmar"}
+                      </Button>
+                    </div>
+
+                    <Button
+                      type="button"
+                      variant="link"
+                      className="w-full text-sm"
+                      onClick={() => requestVerificationCode.mutate("password_change")}
+                      disabled={requestVerificationCode.isPending}
+                    >
+                      Reenviar código
+                    </Button>
+                  </form>
+                </Form>
+              )}
             </CardContent>
           </Card>
         </div>

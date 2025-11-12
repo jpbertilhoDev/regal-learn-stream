@@ -81,6 +81,102 @@ export const useChangePassword = () => {
   });
 };
 
+export const useRequestVerificationCode = () => {
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: async (type: string = "password_change") => {
+      if (!user?.id || !user?.email) throw new Error("User not authenticated");
+
+      // Generate 6-digit code
+      const code = Math.floor(100000 + Math.random() * 900000).toString();
+      const expiresAt = new Date();
+      expiresAt.setMinutes(expiresAt.getMinutes() + 10); // 10 minutes expiry
+
+      // Save code to database
+      const { error: insertError } = await supabase
+        .from("verification_codes")
+        .insert({
+          user_id: user.id,
+          code,
+          type,
+          expires_at: expiresAt.toISOString(),
+        });
+
+      if (insertError) throw insertError;
+
+      // Send email via edge function
+      const { error: emailError } = await supabase.functions.invoke(
+        "send-verification-code",
+        {
+          body: {
+            email: user.email,
+            code,
+            type,
+          },
+        }
+      );
+
+      if (emailError) throw emailError;
+
+      return { success: true };
+    },
+    onSuccess: () => {
+      toast({
+        title: "Código enviado!",
+        description: "Verifique seu email para o código de verificação.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erro ao enviar código",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+};
+
+export const useVerifyCode = () => {
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: async ({ code, type }: { code: string; type: string }) => {
+      if (!user?.id) throw new Error("User not authenticated");
+
+      // Check if code exists and is valid
+      const { data, error } = await supabase
+        .from("verification_codes")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("code", code)
+        .eq("type", type)
+        .eq("used", false)
+        .gt("expires_at", new Date().toISOString())
+        .single();
+
+      if (error || !data) {
+        throw new Error("Código inválido ou expirado");
+      }
+
+      // Mark code as used
+      await supabase
+        .from("verification_codes")
+        .update({ used: true })
+        .eq("id", data.id);
+
+      return { verified: true };
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Código inválido",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+};
+
 export const useUserStats = () => {
   const { user } = useAuth();
 
