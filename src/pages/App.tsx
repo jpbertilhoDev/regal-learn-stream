@@ -1,13 +1,16 @@
 import { Link } from "react-router-dom";
-import { Play, TrendingUp, Sparkles, LogOut, User } from "lucide-react";
+import { Play, TrendingUp, Sparkles, LogOut, User, Clock } from "lucide-react";
 import { TrailCard } from "@/components/TrailCard";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useTrails } from "@/hooks/useTrails";
+import { useContinueWatching } from "@/hooks/useContinueWatching";
+import { Progress } from "@/components/ui/progress";
 
 const AppHome = () => {
   const { user, signOut } = useAuth();
   const { data: trails, isLoading } = useTrails();
+  const { data: continueWatching } = useContinueWatching();
 
   return (
     <div className="min-h-screen">
@@ -42,13 +45,55 @@ const AppHome = () => {
       </header>
 
       <main className="container mx-auto px-4 py-12">
-        {/* Continue Watching - será implementado na Fase 2 com dados reais */}
-        {/* <section className="mb-16">
-          <div className="flex items-center gap-3 mb-6">
-            <Play className="w-5 h-5 text-primary" />
-            <h2 className="text-2xl font-display font-bold">Continuar Assistindo</h2>
-          </div>
-        </section> */}
+        {/* Continue Watching */}
+        {continueWatching && (
+          <section className="mb-16">
+            <div className="flex items-center gap-3 mb-6">
+              <Play className="w-5 h-5 text-primary" />
+              <h2 className="text-2xl font-display font-bold">Continuar Assistindo</h2>
+            </div>
+            
+            <div className="bg-card border border-border rounded-xl p-6 flex flex-col md:flex-row items-start md:items-center gap-6">
+              <div className="w-full md:w-48 h-32 bg-muted rounded-lg flex-shrink-0 overflow-hidden">
+                {continueWatching.thumbnail ? (
+                  <img 
+                    src={continueWatching.thumbnail} 
+                    alt={continueWatching.lessonTitle}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <Play className="w-12 h-12 text-muted-foreground" />
+                  </div>
+                )}
+              </div>
+              
+              <div className="flex-1 space-y-3 w-full">
+                <div>
+                  <p className="text-sm text-muted-foreground">{continueWatching.trailTitle}</p>
+                  <h3 className="text-xl font-semibold">{continueWatching.lessonTitle}</h3>
+                </div>
+                
+                <Progress value={continueWatching.progressPercentage} className="w-full" />
+                
+                <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                  <span>{continueWatching.progressPercentage}% concluído</span>
+                  <span>•</span>
+                  <div className="flex items-center gap-1">
+                    <Clock className="w-3 h-3" />
+                    <span>{continueWatching.remainingTime} restantes</span>
+                  </div>
+                </div>
+              </div>
+              
+              <Button size="lg" className="w-full md:w-auto" asChild>
+                <Link to={`/app/lesson/${continueWatching.lessonId}`}>
+                  Continuar
+                </Link>
+              </Button>
+            </div>
+          </section>
+        )}
 
         {/* Trails */}
         <section>

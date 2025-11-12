@@ -1,11 +1,17 @@
-import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, ChevronRight, FileText, Download } from "lucide-react";
+import { Link, useParams, useNavigate } from "react-router-dom";
+import { ArrowLeft, ChevronRight, FileText, Download, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLesson } from "@/hooks/useLesson";
+import { useMarkComplete } from "@/hooks/useProgress";
+import { VideoPlayer } from "@/components/VideoPlayer";
+import { useToast } from "@/hooks/use-toast";
 
 const Lesson = () => {
   const { slug, lessonId } = useParams();
+  const navigate = useNavigate();
+  const { toast } = useToast();
   const { data, isLoading } = useLesson(lessonId);
+  const markComplete = useMarkComplete();
 
   if (isLoading) {
     return (
@@ -23,12 +29,26 @@ const Lesson = () => {
     );
   }
 
-  const { lesson, allLessons } = data;
+  const { lesson, progress, allLessons } = data;
   const module = lesson.module as any;
   const trail = module.trail;
   
   const currentIndex = allLessons.findIndex((l) => l.id === lessonId);
   const nextLesson = currentIndex < allLessons.length - 1 ? allLessons[currentIndex + 1] : null;
+
+  const handleComplete = () => {
+    if (!lessonId) return;
+    
+    markComplete.mutate(lessonId, {
+      onSuccess: () => {
+        if (nextLesson) {
+          navigate(`/app/lesson/${nextLesson.id}`);
+        } else {
+          navigate(`/app/trail/${trail.slug}`);
+        }
+      },
+    });
+  };
 
   const formatDuration = (seconds: number | null) => {
     if (!seconds) return "0:00";
@@ -54,17 +74,12 @@ const Lesson = () => {
       {/* Video Player */}
       <section className="bg-black">
         <div className="container mx-auto">
-          <div className="aspect-video bg-gradient-to-br from-secondary to-background flex items-center justify-center">
-            <div className="text-center text-muted-foreground">
-              <div className="w-20 h-20 rounded-full border-4 border-primary/30 flex items-center justify-center mx-auto mb-4">
-                <div className="w-0 h-0 border-t-[12px] border-t-transparent border-l-[20px] border-l-primary border-b-[12px] border-b-transparent ml-1" />
-              </div>
-              <p className="text-sm">Player de vídeo será integrado aqui</p>
-              <p className="text-xs mt-2 text-muted-foreground/70">
-                (Cloudflare Stream, Mux ou Vimeo)
-              </p>
-            </div>
-          </div>
+          <VideoPlayer
+            lessonId={lesson.id}
+            videoUrl={lesson.video_url || ""}
+            initialProgress={progress?.progress_seconds || 0}
+            onComplete={handleComplete}
+          />
         </div>
       </section>
 
@@ -138,28 +153,37 @@ const Lesson = () => {
             </div>
           </div>
 
-          {/* Next Lesson */}
-          {nextLesson ? (
-            <Button 
-              className="w-full bg-gradient-gold hover:shadow-gold-lg transition-all duration-300 h-14 text-base font-semibold"
-              asChild
-            >
-              <Link to={`/app/lesson/${slug}/${nextLesson.id}`}>
+          {/* Actions */}
+          <div className="flex flex-col sm:flex-row gap-4">
+            {!progress?.completed && (
+              <Button
+                onClick={handleComplete}
+                variant="outline"
+                size="lg"
+                className="flex-1"
+              >
+                <CheckCircle2 className="w-4 h-4 mr-2" />
+                Marcar como Concluída
+              </Button>
+            )}
+            {nextLesson ? (
+              <Button 
+                className="flex-1 bg-gradient-gold hover:shadow-gold-lg transition-all duration-300 h-14 text-base font-semibold"
+                onClick={() => navigate(`/app/lesson/${nextLesson.id}`)}
+              >
                 Próxima Aula: {nextLesson.title}
                 <ChevronRight className="w-5 h-5 ml-2" />
-              </Link>
-            </Button>
-          ) : (
-            <Button 
-              className="w-full bg-gradient-gold hover:shadow-gold-lg transition-all duration-300 h-14 text-base font-semibold"
-              asChild
-            >
-              <Link to={`/app/trail/${slug}`}>
+              </Button>
+            ) : (
+              <Button 
+                className="flex-1 bg-gradient-gold hover:shadow-gold-lg transition-all duration-300 h-14 text-base font-semibold"
+                onClick={() => navigate(`/app/trail/${trail.slug}`)}
+              >
                 Voltar para Trilha
                 <ArrowLeft className="w-5 h-5 mr-2" />
-              </Link>
-            </Button>
-          )}
+              </Button>
+            )}
+          </div>
         </div>
       </section>
     </div>
