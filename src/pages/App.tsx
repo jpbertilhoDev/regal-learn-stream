@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Play, TrendingUp, Clock, Network, Wallet, Settings } from "lucide-react";
+import { Play, TrendingUp, Clock, Network, Wallet, Settings, Award } from "lucide-react";
 import { TrailCard } from "@/components/TrailCard";
 import { TrailCarousel } from "@/components/TrailCarousel";
 import { UserMenu } from "@/components/UserMenu";
@@ -9,11 +9,16 @@ import { TrailCardSkeleton } from "@/components/LoadingSkeleton";
 import { useTrails } from "@/hooks/useTrails";
 import { useContinueWatching } from "@/hooks/useContinueWatching";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
+import { useAuth } from "@/hooks/useAuth";
+import { useUserBadges } from "@/hooks/useBadges";
 import { Progress } from "@/components/ui/progress";
+import { BadgeCard } from "@/components/BadgeCard";
 
 const AppHome = () => {
+  const { user } = useAuth();
   const { data: trails, isLoading } = useTrails();
   const { data: continueWatching } = useContinueWatching();
+  const { data: userBadges } = useUserBadges(user?.id);
   const { isAdmin } = useIsAdmin();
 
   // Filtrar trilhas por categoria (você pode ajustar os slugs conforme necessário)
@@ -21,6 +26,16 @@ const AppHome = () => {
   const ecosystemTrails = trails?.filter(t => t.category === "ecossistema") || [];
   const financialTrails = trails?.filter(t => t.category === "financeiro") || [];
   const allTrails = trails || [];
+  
+  // Get last 3 earned badges
+  const recentBadges = userBadges?.slice(0, 3).map((ub: any) => ({
+    icon: ub.badge.icon,
+    title: ub.badge.name,
+    description: ub.badge.description,
+    unlocked: true,
+    points: ub.badge.points,
+    earnedAt: ub.earned_at,
+  })) || [];
 
   return (
     <>
@@ -102,6 +117,31 @@ const AppHome = () => {
             </div>
           </section>
         )}
+
+          {/* Recent Badges */}
+          {recentBadges.length > 0 && (
+            <section className="mb-16 animate-fade-in">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <Award className="w-5 h-5 text-primary" />
+                  <h2 className="text-2xl font-display font-bold">Conquistas Recentes</h2>
+                </div>
+                <Button variant="ghost" size="sm" asChild>
+                  <Link to="/profile" className="text-sm">
+                    Ver todas →
+                  </Link>
+                </Button>
+              </div>
+              
+              <div className="grid grid-cols-3 gap-4">
+                {recentBadges.map((badge, index) => (
+                  <div key={index} className="animate-fade-in" style={{ animationDelay: `${index * 0.1}s` }}>
+                    <BadgeCard {...badge} />
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
 
           {/* Ecossistema Section with Carousel */}
           {!isLoading && ecosystemTrails.length > 0 && (

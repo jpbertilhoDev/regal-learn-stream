@@ -6,6 +6,7 @@ import * as z from "zod";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile, useUpdateProfile, useChangePassword, useRequestVerificationCode, useVerifyCode, useUserStats } from "@/hooks/useProfile";
 import { useUploadFile } from "@/hooks/useUploadFile";
+import { useBadges, useUserBadges, useUserBadgeStats } from "@/hooks/useBadges";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -73,6 +74,9 @@ export default function Profile() {
   const { user } = useAuth();
   const { data: profile, isLoading } = useProfile();
   const { data: stats, isLoading: statsLoading } = useUserStats();
+  const { data: allBadges } = useBadges();
+  const { data: userBadges } = useUserBadges(user?.id);
+  const { data: badgeStats } = useUserBadgeStats(user?.id);
   const updateProfile = useUpdateProfile();
   const changePassword = useChangePassword();
   const requestVerificationCode = useRequestVerificationCode();
@@ -82,51 +86,22 @@ export default function Profile() {
   const [showVerification, setShowVerification] = useState(false);
   const [pendingPassword, setPendingPassword] = useState<string>("");
 
-  // Calculate badges
-  const badges = [
-    {
-      icon: PlayCircle,
-      title: "Primeiro Passo",
-      description: "Comece sua primeira aula",
-      unlocked: (stats?.totalLessonsStarted || 0) >= 1,
-      iconColor: "text-blue-500"
-    },
-    {
-      icon: Flame,
-      title: "Dedicado",
-      description: "Complete 10 aulas",
-      unlocked: (stats?.completedLessons || 0) >= 10,
-      iconColor: "text-orange-500"
-    },
-    {
-      icon: Target,
-      title: "Focado",
-      description: "Complete sua primeira trilha",
-      unlocked: (stats?.completedTrails || 0) >= 1,
-      iconColor: "text-green-500"
-    },
-    {
-      icon: Trophy,
-      title: "Mestre",
-      description: "Complete 3 trilhas",
-      unlocked: (stats?.completedTrails || 0) >= 3,
-      iconColor: "text-yellow-500"
-    },
-    {
-      icon: Star,
-      title: "Maratonista",
-      description: "Assista 10 horas de conteúdo",
-      unlocked: (stats?.totalWatchTimeSeconds || 0) >= 36000,
-      iconColor: "text-purple-500"
-    },
-    {
-      icon: Zap,
-      title: "Imparável",
-      description: "Complete 50 aulas",
-      unlocked: (stats?.completedLessons || 0) >= 50,
-      iconColor: "text-red-500"
-    },
-  ];
+  // Create map of earned badges for quick lookup
+  const earnedBadgeIds = new Set(userBadges?.map((ub: any) => ub.badge_id) || []);
+  
+  // Prepare badges data combining all badges with user progress
+  const badges = allBadges?.map((badge) => {
+    const userBadge = userBadges?.find((ub: any) => ub.badge_id === badge.id);
+    return {
+      icon: badge.icon,
+      title: badge.name,
+      description: badge.description,
+      unlocked: earnedBadgeIds.has(badge.id),
+      points: badge.points,
+      earnedAt: userBadge?.earned_at,
+      category: badge.category,
+    };
+  }) || [];
 
   // Format watch time
   const formatWatchTime = (seconds: number) => {
@@ -308,20 +283,80 @@ export default function Profile() {
 
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Award className="w-5 h-5" />
-                  Badges Conquistadas
-                </CardTitle>
-                <CardDescription>
-                  Continue progredindo para desbloquear mais badges
-                </CardDescription>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <Award className="w-5 h-5" />
+                      Badges Conquistadas
+                    </CardTitle>
+                    <CardDescription>
+                      Continue progredindo para desbloquear mais badges
+                    </CardDescription>
+                  </div>
+                  {badgeStats && (
+                    <div className="text-right">
+                      <p className="text-2xl font-bold text-primary">
+                        {badgeStats.earnedBadges}/{badgeStats.totalBadges}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {badgeStats.totalPoints} pontos
+                      </p>
+                    </div>
+                  )}
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-                  {badges.map((badge, index) => (
-                    <BadgeCard key={index} {...badge} />
-                  ))}
-                </div>
+                {badges.length === 0 ? (
+                  <p className="text-center text-muted-foreground py-8">
+                    Carregando badges...
+                  </p>
+                ) : (
+                  <>
+                    {/* Progress by Category */}
+                    <div className="mb-6 space-y-3">
+                      {["progress", "trails", "community", "special"].map((category) => {
+                        const categoryBadges = badges.filter((b) => b.category === category);
+                        const earnedInCategory = categoryBadges.filter((b) => b.unlocked).length;
+                        const categoryNames: Record<string, string> = {
+                          progress: "Progresso",
+                          trails: "Trilhas",
+                          community: "Comunidade",
+                          special: "Especiais",
+                        };
+                        
+                        if (categoryBadges.length === 0) return null;
+                        
+                        return (
+                          <div key={category}>
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-sm font-medium">
+                                {categoryNames[category]}
+                              </span>
+                              <span className="text-xs text-muted-foreground">
+                                {earnedInCategory}/{categoryBadges.length}
+                              </span>
+                            </div>
+                            <div className="h-2 bg-muted rounded-full overflow-hidden">
+                              <div 
+                                className="h-full bg-gradient-gold transition-all duration-500"
+                                style={{ 
+                                  width: `${(earnedInCategory / categoryBadges.length) * 100}%` 
+                                }}
+                              />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Badges Grid */}
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+                      {badges.map((badge, index) => (
+                        <BadgeCard key={index} {...badge} />
+                      ))}
+                    </div>
+                  </>
+                )}
               </CardContent>
             </Card>
           </div>
