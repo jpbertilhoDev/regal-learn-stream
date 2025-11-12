@@ -1,20 +1,41 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  
+  const { user, signUp, signIn } = useAuth();
+  const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user) {
+      navigate("/app");
+    }
+  }, [user, navigate]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implement authentication with Lovable Cloud
-    console.log("Auth:", { email, password, name, isLogin });
+    setIsLoading(true);
+
+    try {
+      if (isLogin) {
+        await signIn(email, password);
+      } else {
+        await signUp(email, password, name);
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -84,9 +105,10 @@ const Auth = () => {
 
             <Button 
               type="submit" 
+              disabled={isLoading}
               className="w-full bg-gradient-gold hover:shadow-gold-lg transition-all duration-300 h-12 font-semibold"
             >
-              {isLogin ? "Entrar" : "Criar Conta"}
+              {isLoading ? "Carregando..." : isLogin ? "Entrar" : "Criar Conta"}
             </Button>
           </form>
 

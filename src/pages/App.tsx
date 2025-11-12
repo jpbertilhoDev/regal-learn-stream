@@ -1,6 +1,8 @@
 import { Link } from "react-router-dom";
-import { Play, TrendingUp, Sparkles } from "lucide-react";
+import { Play, TrendingUp, Sparkles, LogOut, User } from "lucide-react";
 import { TrailCard } from "@/components/TrailCard";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/useAuth";
 import trailIdentity from "@/assets/trail-identity.jpg";
 import trailFinances from "@/assets/trail-finances.jpg";
 import trailFaith from "@/assets/trail-faith.jpg";
@@ -33,6 +35,8 @@ const trails = [
 ];
 
 const AppHome = () => {
+  const { user, signOut } = useAuth();
+
   return (
     <div className="min-h-screen">
       {/* Header */}
@@ -46,9 +50,21 @@ const AppHome = () => {
             <Link to="/app" className="text-sm font-medium hover:text-primary transition-colors">
               Início
             </Link>
-            <Link to="/app" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
-              Minha Conta
-            </Link>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <User className="w-4 h-4" />
+                {user?.email}
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => signOut()}
+                className="hover:text-primary"
+              >
+                <LogOut className="w-4 h-4 mr-2" />
+                Sair
+              </Button>
+            </div>
           </nav>
         </div>
       </header>
