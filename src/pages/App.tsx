@@ -1,15 +1,14 @@
 import { Link } from "react-router-dom";
-import { Play, TrendingUp, Sparkles, LogOut, User, Clock, Network, Wallet, Settings } from "lucide-react";
+import { Play, TrendingUp, Clock, Network, Wallet, Settings } from "lucide-react";
 import { TrailCard } from "@/components/TrailCard";
+import { UserMenu } from "@/components/UserMenu";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/hooks/useAuth";
 import { useTrails } from "@/hooks/useTrails";
 import { useContinueWatching } from "@/hooks/useContinueWatching";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { Progress } from "@/components/ui/progress";
 
 const AppHome = () => {
-  const { user, signOut } = useAuth();
   const { data: trails, isLoading } = useTrails();
   const { data: continueWatching } = useContinueWatching();
   const { isAdmin } = useIsAdmin();
@@ -37,21 +36,7 @@ const AppHome = () => {
                 Admin
               </Link>
             )}
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <User className="w-4 h-4" />
-                {user?.email}
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => signOut()}
-                className="hover:text-primary"
-              >
-                <LogOut className="w-4 h-4 mr-2" />
-                Sair
-              </Button>
-            </div>
+            <UserMenu />
           </nav>
         </div>
       </header>
