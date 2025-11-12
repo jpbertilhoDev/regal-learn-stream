@@ -1,16 +1,18 @@
 import { Link } from "react-router-dom";
-import { Play, TrendingUp, Sparkles, LogOut, User, Clock, Network, Wallet } from "lucide-react";
+import { Play, TrendingUp, Sparkles, LogOut, User, Clock, Network, Wallet, Settings } from "lucide-react";
 import { TrailCard } from "@/components/TrailCard";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useTrails } from "@/hooks/useTrails";
 import { useContinueWatching } from "@/hooks/useContinueWatching";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { Progress } from "@/components/ui/progress";
 
 const AppHome = () => {
   const { user, signOut } = useAuth();
   const { data: trails, isLoading } = useTrails();
   const { data: continueWatching } = useContinueWatching();
+  const { isAdmin } = useIsAdmin();
 
   // Filtrar trilhas por categoria (você pode ajustar os slugs conforme necessário)
   const ecosystemTrails = trails?.slice(0, 3) || [];
@@ -29,6 +31,12 @@ const AppHome = () => {
             <Link to="/app" className="text-sm font-medium hover:text-primary transition-colors">
               Início
             </Link>
+            {isAdmin && (
+              <Link to="/admin" className="text-sm font-medium hover:text-primary transition-colors flex items-center gap-2">
+                <Settings className="w-4 h-4" />
+                Admin
+              </Link>
+            )}
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <User className="w-4 h-4" />
