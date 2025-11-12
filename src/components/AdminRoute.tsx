@@ -12,15 +12,37 @@ export const AdminRoute = ({ children }: AdminRouteProps) => {
   const { isAdmin, isLoading: adminLoading } = useIsAdmin();
   const navigate = useNavigate();
 
+  console.log("AdminRoute render:", { 
+    user: user?.id, 
+    authLoading, 
+    isAdmin, 
+    adminLoading 
+  });
+
   useEffect(() => {
+    console.log("AdminRoute useEffect:", { 
+      authLoading, 
+      user: user?.id, 
+      adminLoading, 
+      isAdmin 
+    });
+
     if (!authLoading && !user) {
+      console.log("AdminRoute: No user, redirecting to /auth");
       navigate("/auth");
-    } else if (!authLoading && !adminLoading && !isAdmin) {
+      return;
+    }
+    
+    if (!authLoading && !adminLoading && user && !isAdmin) {
+      console.log("AdminRoute: User is not admin, redirecting to /app");
       navigate("/app");
+      return;
     }
   }, [user, authLoading, isAdmin, adminLoading, navigate]);
 
-  if (authLoading || adminLoading) {
+  // Show loading only when actually loading
+  if (authLoading || (user && adminLoading)) {
+    console.log("AdminRoute: Showing loading screen");
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
@@ -31,9 +53,12 @@ export const AdminRoute = ({ children }: AdminRouteProps) => {
     );
   }
 
+  // Don't render until we have both user and admin status
   if (!user || !isAdmin) {
+    console.log("AdminRoute: Not rendering (no user or not admin)");
     return null;
   }
 
+  console.log("AdminRoute: Rendering children");
   return <>{children}</>;
 };
