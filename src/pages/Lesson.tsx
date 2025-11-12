@@ -5,12 +5,15 @@ import { useLesson } from "@/hooks/useLesson";
 import { useMarkComplete } from "@/hooks/useProgress";
 import { VideoPlayer } from "@/components/VideoPlayer";
 import { useToast } from "@/hooks/use-toast";
+import { useResources, formatFileSize } from "@/hooks/useResources";
+import { Comments } from "@/components/Comments";
 
 const Lesson = () => {
   const { slug, lessonId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { data, isLoading } = useLesson(lessonId);
+  const { data: resources, isLoading: resourcesLoading } = useResources(lessonId);
   const markComplete = useMarkComplete();
 
   if (isLoading) {
@@ -108,50 +111,55 @@ const Lesson = () => {
           </div>
 
           {/* Materials */}
-          <div className="bg-card border border-border rounded-xl p-6 mb-8">
-            <div className="flex items-center gap-3 mb-4">
-              <FileText className="w-5 h-5 text-primary" />
-              <h2 className="text-xl font-display font-bold">Materiais de Apoio</h2>
-            </div>
-            
-            <div className="space-y-3">
-              <a
-                href="#"
-                className="flex items-center justify-between p-4 bg-secondary/30 rounded-lg hover:bg-secondary/50 transition-colors group"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
-                    <FileText className="w-5 h-5 text-primary" />
-                  </div>
-                  <div>
-                    <p className="font-semibold group-hover:text-primary transition-colors">
-                      Workbook - Descobrindo Sua Identidade
-                    </p>
-                    <p className="text-sm text-muted-foreground">PDF • 2.4 MB</p>
-                  </div>
-                </div>
-                <Download className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
-              </a>
+          {resources && resources.length > 0 && (
+            <div className="bg-card border border-border rounded-xl p-6 mb-8">
+              <div className="flex items-center gap-3 mb-4">
+                <FileText className="w-5 h-5 text-primary" />
+                <h2 className="text-xl font-display font-bold">Materiais de Apoio</h2>
+              </div>
               
-              <a
-                href="#"
-                className="flex items-center justify-between p-4 bg-secondary/30 rounded-lg hover:bg-secondary/50 transition-colors group"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
-                    <FileText className="w-5 h-5 text-primary" />
-                  </div>
-                  <div>
-                    <p className="font-semibold group-hover:text-primary transition-colors">
-                      Exercícios Práticos
-                    </p>
-                    <p className="text-sm text-muted-foreground">PDF • 1.8 MB</p>
-                  </div>
+              {resourcesLoading ? (
+                <p className="text-center text-muted-foreground py-4">
+                  Carregando materiais...
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {resources.map((resource) => (
+                    <a
+                      key={resource.id}
+                      href={resource.file_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-between p-4 bg-secondary/30 rounded-lg hover:bg-secondary/50 transition-colors group"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
+                          <FileText className="w-5 h-5 text-primary" />
+                        </div>
+                        <div>
+                          <p className="font-semibold group-hover:text-primary transition-colors">
+                            {resource.title}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            {resource.file_type.toUpperCase()} • {formatFileSize(resource.file_size)}
+                          </p>
+                          {resource.description && (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {resource.description}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <Download className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                    </a>
+                  ))}
                 </div>
-                <Download className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
-              </a>
+              )}
             </div>
-          </div>
+          )}
+
+          {/* Comments */}
+          {lessonId && <Comments lessonId={lessonId} />}
 
           {/* Actions */}
           <div className="flex flex-col sm:flex-row gap-4">

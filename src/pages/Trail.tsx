@@ -2,6 +2,7 @@ import { Link, useParams } from "react-router-dom";
 import { ArrowLeft, Play, Lock, CheckCircle2, Clock } from "lucide-react";
 import { useTrailDetails } from "@/hooks/useTrailDetails";
 import { SEO } from "@/components/SEO";
+import { Reviews } from "@/components/Reviews";
 
 const Trail = () => {
   const { slug } = useParams();
@@ -86,6 +87,8 @@ const Trail = () => {
       {/* Modules & Lessons */}
       <section className="container mx-auto px-4 py-12">
         <div className="max-w-4xl mx-auto space-y-8">
+          {/* Reviews Section */}
+          <Reviews trailId={trail.id} />
           {modules.map((module, moduleIndex) => (
             <div key={module.id} className="bg-card border border-border rounded-xl overflow-hidden">
               <div className="p-6 bg-secondary/30 border-b border-border">
