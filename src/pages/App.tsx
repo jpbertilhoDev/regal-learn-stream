@@ -14,6 +14,7 @@ import { useUserBadges } from "@/hooks/useBadges";
 import { Progress } from "@/components/ui/progress";
 import { BadgeCard } from "@/components/BadgeCard";
 import { WeeklyChallenges } from "@/components/WeeklyChallenges";
+import { WeeklyChallenges } from "@/components/WeeklyChallenges";
 
 const AppHome = () => {
   const { user } = useAuth();
