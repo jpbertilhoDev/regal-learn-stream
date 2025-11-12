@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useAuth } from "@/hooks/useAuth";
-import { useProfile, useUpdateProfile, useChangePassword } from "@/hooks/useProfile";
+import { useProfile, useUpdateProfile, useChangePassword, useUserStats } from "@/hooks/useProfile";
 import { useUploadFile } from "@/hooks/useUploadFile";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,9 +23,23 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
 import { FileUpload } from "@/components/admin/FileUpload";
-import { ArrowLeft, User, Lock } from "lucide-react";
+import { StatCard } from "@/components/StatCard";
+import { BadgeCard } from "@/components/BadgeCard";
+import { 
+  ArrowLeft, 
+  User, 
+  Lock, 
+  Clock, 
+  PlayCircle, 
+  CheckCircle, 
+  Award,
+  Flame,
+  Target,
+  Trophy,
+  Star,
+  Zap
+} from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 const profileSchema = z.object({
@@ -53,10 +67,67 @@ export default function Profile() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { data: profile, isLoading } = useProfile();
+  const { data: stats, isLoading: statsLoading } = useUserStats();
   const updateProfile = useUpdateProfile();
   const changePassword = useChangePassword();
   const { uploadFile } = useUploadFile();
   const [avatarPreview, setAvatarPreview] = useState<string>("");
+
+  // Calculate badges
+  const badges = [
+    {
+      icon: PlayCircle,
+      title: "Primeiro Passo",
+      description: "Comece sua primeira aula",
+      unlocked: (stats?.totalLessonsStarted || 0) >= 1,
+      iconColor: "text-blue-500"
+    },
+    {
+      icon: Flame,
+      title: "Dedicado",
+      description: "Complete 10 aulas",
+      unlocked: (stats?.completedLessons || 0) >= 10,
+      iconColor: "text-orange-500"
+    },
+    {
+      icon: Target,
+      title: "Focado",
+      description: "Complete sua primeira trilha",
+      unlocked: (stats?.completedTrails || 0) >= 1,
+      iconColor: "text-green-500"
+    },
+    {
+      icon: Trophy,
+      title: "Mestre",
+      description: "Complete 3 trilhas",
+      unlocked: (stats?.completedTrails || 0) >= 3,
+      iconColor: "text-yellow-500"
+    },
+    {
+      icon: Star,
+      title: "Maratonista",
+      description: "Assista 10 horas de conteúdo",
+      unlocked: (stats?.totalWatchTimeSeconds || 0) >= 36000,
+      iconColor: "text-purple-500"
+    },
+    {
+      icon: Zap,
+      title: "Imparável",
+      description: "Complete 50 aulas",
+      unlocked: (stats?.completedLessons || 0) >= 50,
+      iconColor: "text-red-500"
+    },
+  ];
+
+  // Format watch time
+  const formatWatchTime = (seconds: number) => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    if (hours > 0) {
+      return `${hours}h ${minutes}min`;
+    }
+    return `${minutes}min`;
+  };
 
   const profileForm = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
@@ -132,6 +203,61 @@ export default function Profile() {
           <ArrowLeft className="w-4 h-4 mr-2" />
           Voltar
         </Button>
+
+        {/* Stats Section */}
+        {!statsLoading && stats && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Award className="w-5 h-5" />
+                Suas Estatísticas
+              </CardTitle>
+              <CardDescription>
+                Acompanhe seu progresso e conquistas
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <StatCard
+                  icon={Clock}
+                  label="Tempo Assistido"
+                  value={formatWatchTime(stats.totalWatchTimeSeconds)}
+                  iconColor="text-blue-500"
+                />
+                <StatCard
+                  icon={PlayCircle}
+                  label="Aulas Iniciadas"
+                  value={stats.totalLessonsStarted}
+                  iconColor="text-purple-500"
+                />
+                <StatCard
+                  icon={CheckCircle}
+                  label="Aulas Completas"
+                  value={stats.completedLessons}
+                  iconColor="text-green-500"
+                />
+                <StatCard
+                  icon={Trophy}
+                  label="Trilhas Completas"
+                  value={stats.completedTrails}
+                  iconColor="text-yellow-500"
+                />
+              </div>
+
+              <div className="mt-8">
+                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                  <Award className="w-5 h-5 text-primary" />
+                  Badges Conquistadas
+                </h3>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                  {badges.map((badge, index) => (
+                    <BadgeCard key={index} {...badge} />
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <Card>
           <CardHeader>

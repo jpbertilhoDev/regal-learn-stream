@@ -80,3 +80,81 @@ export const useChangePassword = () => {
     },
   });
 };
+
+export const useUserStats = () => {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ["userStats", user?.id],
+    queryFn: async () => {
+      if (!user?.id) throw new Error("User not authenticated");
+
+      // Get total lessons started
+      const { count: totalLessonsStarted } = await supabase
+        .from("progress")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", user.id);
+
+      // Get completed lessons
+      const { count: completedLessons } = await supabase
+        .from("progress")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", user.id)
+        .eq("completed", true);
+
+      // Get total watch time
+      const { data: progressData } = await supabase
+        .from("progress")
+        .select("progress_seconds")
+        .eq("user_id", user.id);
+
+      const totalWatchTimeSeconds = progressData?.reduce(
+        (sum, p) => sum + (p.progress_seconds || 0),
+        0
+      ) || 0;
+
+      // Get trails progress
+      const { data: trailsProgress } = await supabase
+        .from("progress")
+        .select(`
+          lesson_id,
+          completed,
+          lesson:lessons(
+            module:modules(
+              trail_id
+            )
+          )
+        `)
+        .eq("user_id", user.id);
+
+      // Calculate completed trails
+      const trailsMap = new Map<string, { total: number; completed: number }>();
+      
+      trailsProgress?.forEach((progress: any) => {
+        const trailId = progress.lesson?.module?.trail_id;
+        if (trailId) {
+          if (!trailsMap.has(trailId)) {
+            trailsMap.set(trailId, { total: 0, completed: 0 });
+          }
+          const trail = trailsMap.get(trailId)!;
+          trail.total++;
+          if (progress.completed) {
+            trail.completed++;
+          }
+        }
+      });
+
+      const completedTrails = Array.from(trailsMap.values()).filter(
+        (trail) => trail.total > 0 && trail.completed === trail.total
+      ).length;
+
+      return {
+        totalLessonsStarted: totalLessonsStarted || 0,
+        completedLessons: completedLessons || 0,
+        completedTrails,
+        totalWatchTimeSeconds,
+      };
+    },
+    enabled: !!user?.id,
+  });
+};
