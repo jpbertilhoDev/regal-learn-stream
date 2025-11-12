@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useAuth } from "@/hooks/useAuth";
-import { useProfile, useUpdateProfile } from "@/hooks/useProfile";
+import { useProfile, useUpdateProfile, useChangePassword } from "@/hooks/useProfile";
 import { useUploadFile } from "@/hooks/useUploadFile";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,8 +23,9 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
 import { FileUpload } from "@/components/admin/FileUpload";
-import { ArrowLeft, User } from "lucide-react";
+import { ArrowLeft, User, Lock } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 const profileSchema = z.object({
@@ -32,21 +33,44 @@ const profileSchema = z.object({
   avatar_url: z.string().optional(),
 });
 
+const passwordSchema = z.object({
+  newPassword: z
+    .string()
+    .min(8, "A senha deve ter pelo menos 8 caracteres")
+    .regex(/[A-Z]/, "A senha deve conter pelo menos uma letra maiúscula")
+    .regex(/[a-z]/, "A senha deve conter pelo menos uma letra minúscula")
+    .regex(/[0-9]/, "A senha deve conter pelo menos um número"),
+  confirmPassword: z.string(),
+}).refine((data) => data.newPassword === data.confirmPassword, {
+  message: "As senhas não coincidem",
+  path: ["confirmPassword"],
+});
+
 type ProfileFormValues = z.infer<typeof profileSchema>;
+type PasswordFormValues = z.infer<typeof passwordSchema>;
 
 export default function Profile() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { data: profile, isLoading } = useProfile();
   const updateProfile = useUpdateProfile();
+  const changePassword = useChangePassword();
   const { uploadFile } = useUploadFile();
   const [avatarPreview, setAvatarPreview] = useState<string>("");
 
-  const form = useForm<ProfileFormValues>({
+  const profileForm = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
     values: {
       name: profile?.name || "",
       avatar_url: profile?.avatar_url || "",
+    },
+  });
+
+  const passwordForm = useForm<PasswordFormValues>({
+    resolver: zodResolver(passwordSchema),
+    defaultValues: {
+      newPassword: "",
+      confirmPassword: "",
     },
   });
 
@@ -71,10 +95,18 @@ export default function Profile() {
     }
   };
 
-  const onSubmit = async (data: ProfileFormValues) => {
+  const onProfileSubmit = async (data: ProfileFormValues) => {
     updateProfile.mutate({
       name: data.name,
       avatar_url: avatarPreview || data.avatar_url,
+    });
+  };
+
+  const onPasswordSubmit = async (data: PasswordFormValues) => {
+    changePassword.mutate(data.newPassword, {
+      onSuccess: () => {
+        passwordForm.reset();
+      },
     });
   };
 
@@ -105,15 +137,15 @@ export default function Profile() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <User className="w-5 h-5" />
-              Meu Perfil
+              Informações Pessoais
             </CardTitle>
             <CardDescription>
-              Gerencie suas informações pessoais
+              Atualize seu nome e foto de perfil
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <Form {...profileForm}>
+              <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-6">
                 <div className="flex flex-col items-center gap-4 mb-6">
                   <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center overflow-hidden border-2 border-border">
                     {(avatarPreview || profile?.avatar_url) ? (
@@ -136,7 +168,7 @@ export default function Profile() {
                 </div>
 
                 <FormField
-                  control={form.control}
+                  control={profileForm.control}
                   name="name"
                   render={({ field }) => (
                     <FormItem>
@@ -163,6 +195,79 @@ export default function Profile() {
                   disabled={updateProfile.isPending}
                 >
                   {updateProfile.isPending ? "Salvando..." : "Salvar Alterações"}
+                </Button>
+              </form>
+            </Form>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Lock className="w-5 h-5" />
+              Alterar Senha
+            </CardTitle>
+            <CardDescription>
+              Atualize sua senha de acesso
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Form {...passwordForm}>
+              <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-6">
+                <FormField
+                  control={passwordForm.control}
+                  name="newPassword"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Nova Senha</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="password" 
+                          placeholder="Digite sua nova senha"
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={passwordForm.control}
+                  name="confirmPassword"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Confirmar Nova Senha</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="password" 
+                          placeholder="Confirme sua nova senha"
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="bg-muted/50 border border-border rounded-lg p-4">
+                  <p className="text-sm text-muted-foreground mb-2">
+                    <strong>Requisitos da senha:</strong>
+                  </p>
+                  <ul className="text-xs text-muted-foreground space-y-1 list-disc list-inside">
+                    <li>Mínimo de 8 caracteres</li>
+                    <li>Pelo menos uma letra maiúscula</li>
+                    <li>Pelo menos uma letra minúscula</li>
+                    <li>Pelo menos um número</li>
+                  </ul>
+                </div>
+
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={changePassword.isPending}
+                >
+                  {changePassword.isPending ? "Alterando..." : "Alterar Senha"}
                 </Button>
               </form>
             </Form>

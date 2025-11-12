@@ -55,3 +55,28 @@ export const useUpdateProfile = () => {
     },
   });
 };
+
+export const useChangePassword = () => {
+  return useMutation({
+    mutationFn: async (newPassword: string) => {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({
+        title: "Senha alterada!",
+        description: "Sua senha foi atualizada com sucesso.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erro ao alterar senha",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+};
