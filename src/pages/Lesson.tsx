@@ -1,9 +1,41 @@
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft, ChevronRight, FileText, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useLesson } from "@/hooks/useLesson";
 
 const Lesson = () => {
   const { slug, lessonId } = useParams();
+  const { data, isLoading } = useLesson(lessonId);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-muted-foreground">Carregando aula...</p>
+      </div>
+    );
+  }
+
+  if (!data) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-muted-foreground">Aula não encontrada</p>
+      </div>
+    );
+  }
+
+  const { lesson, allLessons } = data;
+  const module = lesson.module as any;
+  const trail = module.trail;
+  
+  const currentIndex = allLessons.findIndex((l) => l.id === lessonId);
+  const nextLesson = currentIndex < allLessons.length - 1 ? allLessons[currentIndex + 1] : null;
+
+  const formatDuration = (seconds: number | null) => {
+    if (!seconds) return "0:00";
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -42,17 +74,21 @@ const Lesson = () => {
           {/* Lesson Info */}
           <div className="mb-8">
             <div className="inline-block px-3 py-1 rounded-full bg-primary/10 border border-primary/30 text-xs uppercase tracking-wider text-primary mb-4">
-              Aula {lessonId} de 12
+              Aula {currentIndex + 1} de {allLessons.length} • {trail.title}
             </div>
             
             <h1 className="text-3xl md:text-4xl font-display font-bold mb-4">
-              O que é Identidade?
+              {lesson.title}
             </h1>
             
-            <p className="text-muted-foreground leading-relaxed mb-6">
-              Nesta aula introdutória, vamos explorar o conceito fundamental de identidade e como ela molda 
-              todas as áreas da nossa vida. Você vai entender a diferença entre identidade verdadeira e 
-              identidade construída, e começar sua jornada de autoconhecimento.
+            {lesson.description && (
+              <p className="text-muted-foreground leading-relaxed mb-6">
+                {lesson.description}
+              </p>
+            )}
+
+            <p className="text-sm text-muted-foreground">
+              Duração: {formatDuration(lesson.video_duration)}
             </p>
           </div>
 
@@ -103,15 +139,27 @@ const Lesson = () => {
           </div>
 
           {/* Next Lesson */}
-          <Button 
-            className="w-full bg-gradient-gold hover:shadow-gold-lg transition-all duration-300 h-14 text-base font-semibold"
-            asChild
-          >
-            <Link to={`/app/lesson/${slug}/${Number(lessonId) + 1}`}>
-              Próxima Aula: Descobrindo Suas Raízes
-              <ChevronRight className="w-5 h-5 ml-2" />
-            </Link>
-          </Button>
+          {nextLesson ? (
+            <Button 
+              className="w-full bg-gradient-gold hover:shadow-gold-lg transition-all duration-300 h-14 text-base font-semibold"
+              asChild
+            >
+              <Link to={`/app/lesson/${slug}/${nextLesson.id}`}>
+                Próxima Aula: {nextLesson.title}
+                <ChevronRight className="w-5 h-5 ml-2" />
+              </Link>
+            </Button>
+          ) : (
+            <Button 
+              className="w-full bg-gradient-gold hover:shadow-gold-lg transition-all duration-300 h-14 text-base font-semibold"
+              asChild
+            >
+              <Link to={`/app/trail/${slug}`}>
+                Voltar para Trilha
+                <ArrowLeft className="w-5 h-5 mr-2" />
+              </Link>
+            </Button>
+          )}
         </div>
       </section>
     </div>
