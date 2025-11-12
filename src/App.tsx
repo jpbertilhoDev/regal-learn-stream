@@ -20,6 +20,8 @@ const ModulesList = lazy(() => import("./pages/admin/modules/ModulesList"));
 const ModuleForm = lazy(() => import("./pages/admin/modules/ModuleForm"));
 const LessonsList = lazy(() => import("./pages/admin/lessons/LessonsList"));
 const LessonForm = lazy(() => import("./pages/admin/lessons/LessonForm"));
+const UsersList = lazy(() => import("./pages/admin/users/UsersList"));
+const UserDetails = lazy(() => import("./pages/admin/users/UserDetails"));
 
 const queryClient = new QueryClient();
 
@@ -148,6 +150,28 @@ const App = () => (
               <AdminRoute>
                 <Suspense fallback={<LoadingFallback />}>
                   <LessonForm />
+                </Suspense>
+              </AdminRoute>
+            } 
+          />
+
+          {/* Users */}
+          <Route 
+            path="/admin/users" 
+            element={
+              <AdminRoute>
+                <Suspense fallback={<LoadingFallback />}>
+                  <UsersList />
+                </Suspense>
+              </AdminRoute>
+            } 
+          />
+          <Route 
+            path="/admin/users/:id" 
+            element={
+              <AdminRoute>
+                <Suspense fallback={<LoadingFallback />}>
+                  <UserDetails />
                 </Suspense>
               </AdminRoute>
             } 
