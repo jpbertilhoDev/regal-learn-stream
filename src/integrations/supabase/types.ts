@@ -217,12 +217,8 @@ export type Database = {
       }
       trails: {
         Row: {
-          category: Database["public"]["Enums"]["trail_category"] | null
           created_at: string
           description: string
-          difficulty_level:
-            | Database["public"]["Enums"]["difficulty_level"]
-            | null
           duration: number
           id: string
           is_published: boolean
@@ -234,12 +230,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          category?: Database["public"]["Enums"]["trail_category"] | null
           created_at?: string
           description: string
-          difficulty_level?:
-            | Database["public"]["Enums"]["difficulty_level"]
-            | null
           duration: number
           id?: string
           is_published?: boolean
@@ -251,12 +243,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          category?: Database["public"]["Enums"]["trail_category"] | null
           created_at?: string
           description?: string
-          difficulty_level?:
-            | Database["public"]["Enums"]["difficulty_level"]
-            | null
           duration?: number
           id?: string
           is_published?: boolean
@@ -305,8 +293,6 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user"
-      difficulty_level: "iniciante" | "intermediario" | "avancado"
-      trail_category: "ecossistema" | "financeiro" | "geral"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -435,8 +421,6 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user"],
-      difficulty_level: ["iniciante", "intermediario", "avancado"],
-      trail_category: ["ecossistema", "financeiro", "geral"],
     },
   },
 } as const

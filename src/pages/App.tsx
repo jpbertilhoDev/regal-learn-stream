@@ -1,4 +1,3 @@
-import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Play, TrendingUp, Sparkles, LogOut, User, Clock, Network, Wallet } from "lucide-react";
 import { TrailCard } from "@/components/TrailCard";
@@ -7,70 +6,15 @@ import { useAuth } from "@/hooks/useAuth";
 import { useTrails } from "@/hooks/useTrails";
 import { useContinueWatching } from "@/hooks/useContinueWatching";
 import { Progress } from "@/components/ui/progress";
-import { SearchAndFilters } from "@/components/SearchAndFilters";
 
 const AppHome = () => {
   const { user, signOut } = useAuth();
   const { data: trails, isLoading } = useTrails();
   const { data: continueWatching } = useContinueWatching();
 
-  // Filter states
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("all");
-  const [selectedDifficulty, setSelectedDifficulty] = useState("all");
-  const [selectedDuration, setSelectedDuration] = useState("all");
-
-  // Category-specific trails (independent of filters)
-  const ecosystemTrails = useMemo(() => {
-    if (!trails) return [];
-    return trails.filter((trail) => trail.category === "ecossistema").slice(0, 3);
-  }, [trails]);
-
-  const financialTrails = useMemo(() => {
-    if (!trails) return [];
-    return trails.filter((trail) => trail.category === "financeiro").slice(0, 3);
-  }, [trails]);
-
-  // Filter logic for "Todas as Trilhas" section
-  const filteredTrails = useMemo(() => {
-    if (!trails) return [];
-
-    return trails.filter((trail) => {
-      // Search filter
-      const matchesSearch =
-        searchQuery === "" ||
-        trail.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        trail.description.toLowerCase().includes(searchQuery.toLowerCase());
-
-      // Category filter
-      const matchesCategory =
-        selectedCategory === "all" || trail.category === selectedCategory;
-
-      // Difficulty filter
-      const matchesDifficulty =
-        selectedDifficulty === "all" || trail.difficulty_level === selectedDifficulty;
-
-      // Duration filter (in minutes)
-      const durationInHours = trail.duration / 60;
-      let matchesDuration = true;
-      if (selectedDuration === "short") {
-        matchesDuration = durationInHours <= 2;
-      } else if (selectedDuration === "medium") {
-        matchesDuration = durationInHours > 2 && durationInHours <= 5;
-      } else if (selectedDuration === "long") {
-        matchesDuration = durationInHours > 5;
-      }
-
-      return matchesSearch && matchesCategory && matchesDifficulty && matchesDuration;
-    });
-  }, [trails, searchQuery, selectedCategory, selectedDifficulty, selectedDuration]);
-
-  const handleClearFilters = () => {
-    setSearchQuery("");
-    setSelectedCategory("all");
-    setSelectedDifficulty("all");
-    setSelectedDuration("all");
-  };
+  // Filtrar trilhas por categoria (você pode ajustar os slugs conforme necessário)
+  const ecosystemTrails = trails?.slice(0, 3) || [];
+  const financialTrails = trails?.slice(0, 3) || [];
 
   return (
     <div className="min-h-screen">
@@ -203,21 +147,6 @@ const AppHome = () => {
           </section>
         )}
 
-        {/* Search and Filters */}
-        <section className="mb-12">
-          <SearchAndFilters
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
-            selectedCategory={selectedCategory}
-            onCategoryChange={setSelectedCategory}
-            selectedDifficulty={selectedDifficulty}
-            onDifficultyChange={setSelectedDifficulty}
-            selectedDuration={selectedDuration}
-            onDurationChange={setSelectedDuration}
-            onClearFilters={handleClearFilters}
-          />
-        </section>
-
         {/* Trails */}
         <section>
           <div className="flex items-center gap-3 mb-6">
@@ -229,9 +158,9 @@ const AppHome = () => {
             <div className="text-center py-12 text-muted-foreground">
               Carregando trilhas...
             </div>
-          ) : filteredTrails.length > 0 ? (
+          ) : trails && trails.length > 0 ? (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredTrails.map((trail) => (
+              {trails.map((trail) => (
                 <TrailCard
                   key={trail.id}
                   id={trail.slug}
@@ -245,13 +174,7 @@ const AppHome = () => {
             </div>
           ) : (
             <div className="text-center py-12 text-muted-foreground">
-              <p className="text-lg mb-2">Nenhuma trilha encontrada</p>
-              <p className="text-sm">Tente ajustar os filtros ou buscar por outros termos</p>
-              {(searchQuery || selectedCategory !== "all" || selectedDifficulty !== "all" || selectedDuration !== "all") && (
-                <Button variant="outline" className="mt-4" onClick={handleClearFilters}>
-                  Limpar Filtros
-                </Button>
-              )}
+              Nenhuma trilha disponível no momento.
             </div>
           )}
         </section>
