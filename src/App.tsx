@@ -22,6 +22,7 @@ const LessonsList = lazy(() => import("./pages/admin/lessons/LessonsList"));
 const LessonForm = lazy(() => import("./pages/admin/lessons/LessonForm"));
 const UsersList = lazy(() => import("./pages/admin/users/UsersList"));
 const UserDetails = lazy(() => import("./pages/admin/users/UserDetails"));
+const Profile = lazy(() => import("./pages/Profile"));
 
 const queryClient = new QueryClient();
 
@@ -46,6 +47,16 @@ const App = () => (
           <Route path="/app" element={<ProtectedRoute><AppHome /></ProtectedRoute>} />
           <Route path="/app/trail/:slug" element={<ProtectedRoute><Trail /></ProtectedRoute>} />
           <Route path="/app/lesson/:slug/:lessonId" element={<ProtectedRoute><Lesson /></ProtectedRoute>} />
+          <Route 
+            path="/profile" 
+            element={
+              <ProtectedRoute>
+                <Suspense fallback={<LoadingFallback />}>
+                  <Profile />
+                </Suspense>
+              </ProtectedRoute>
+            } 
+          />
           
           {/* Admin Routes */}
           <Route 
