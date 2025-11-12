@@ -27,21 +27,29 @@ export const AdminRoute = ({ children }: AdminRouteProps) => {
       isAdmin 
     });
 
-    if (!authLoading && !user) {
+    // Wait for both auth and admin loading to complete
+    if (authLoading || adminLoading) {
+      console.log("AdminRoute: Still loading, waiting...");
+      return;
+    }
+
+    if (!user) {
       console.log("AdminRoute: No user, redirecting to /auth");
       navigate("/auth");
       return;
     }
     
-    if (!authLoading && !adminLoading && user && !isAdmin) {
+    if (!isAdmin) {
       console.log("AdminRoute: User is not admin, redirecting to /app");
       navigate("/app");
       return;
     }
+
+    console.log("AdminRoute: User is admin, staying on page");
   }, [user, authLoading, isAdmin, adminLoading, navigate]);
 
-  // Show loading only when actually loading
-  if (authLoading || (user && adminLoading)) {
+  // Show loading while checking permissions
+  if (authLoading || adminLoading) {
     console.log("AdminRoute: Showing loading screen");
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -53,7 +61,7 @@ export const AdminRoute = ({ children }: AdminRouteProps) => {
     );
   }
 
-  // Don't render until we have both user and admin status
+  // Don't render until we confirm user is admin
   if (!user || !isAdmin) {
     console.log("AdminRoute: Not rendering (no user or not admin)");
     return null;
