@@ -50,104 +50,6 @@ export type Database = {
         }
         Relationships: []
       }
-      challenge_rewards: {
-        Row: {
-          challenge_id: string
-          claimed_at: string
-          id: string
-          reward_badge_id: string | null
-          reward_points: number
-          user_id: string
-        }
-        Insert: {
-          challenge_id: string
-          claimed_at?: string
-          id?: string
-          reward_badge_id?: string | null
-          reward_points: number
-          user_id: string
-        }
-        Update: {
-          challenge_id?: string
-          claimed_at?: string
-          id?: string
-          reward_badge_id?: string | null
-          reward_points?: number
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "challenge_rewards_challenge_id_fkey"
-            columns: ["challenge_id"]
-            isOneToOne: false
-            referencedRelation: "challenges"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "challenge_rewards_reward_badge_id_fkey"
-            columns: ["reward_badge_id"]
-            isOneToOne: false
-            referencedRelation: "badges"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      challenges: {
-        Row: {
-          challenge_type: string
-          created_at: string
-          description: string
-          difficulty: string
-          end_date: string
-          icon: string
-          id: string
-          is_active: boolean
-          reward_badge_id: string | null
-          reward_points: number
-          start_date: string
-          target_value: number
-          title: string
-        }
-        Insert: {
-          challenge_type: string
-          created_at?: string
-          description: string
-          difficulty?: string
-          end_date: string
-          icon: string
-          id?: string
-          is_active?: boolean
-          reward_badge_id?: string | null
-          reward_points?: number
-          start_date: string
-          target_value: number
-          title: string
-        }
-        Update: {
-          challenge_type?: string
-          created_at?: string
-          description?: string
-          difficulty?: string
-          end_date?: string
-          icon?: string
-          id?: string
-          is_active?: boolean
-          reward_badge_id?: string | null
-          reward_points?: number
-          start_date?: string
-          target_value?: number
-          title?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "challenges_reward_badge_id_fkey"
-            columns: ["reward_badge_id"]
-            isOneToOne: false
-            referencedRelation: "badges"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       comments: {
         Row: {
           content: string
@@ -549,44 +451,6 @@ export type Database = {
           },
         ]
       }
-      user_challenges: {
-        Row: {
-          challenge_id: string
-          completed: boolean
-          completed_at: string | null
-          current_progress: number
-          id: string
-          started_at: string
-          user_id: string
-        }
-        Insert: {
-          challenge_id: string
-          completed?: boolean
-          completed_at?: string | null
-          current_progress?: number
-          id?: string
-          started_at?: string
-          user_id: string
-        }
-        Update: {
-          challenge_id?: string
-          completed?: boolean
-          completed_at?: string | null
-          current_progress?: number
-          id?: string
-          started_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "user_challenges_challenge_id_fkey"
-            columns: ["challenge_id"]
-            isOneToOne: false
-            referencedRelation: "challenges"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       user_roles: {
         Row: {
           created_at: string
@@ -655,10 +519,6 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
-      }
-      update_challenge_progress: {
-        Args: { _challenge_type: string; _increment?: number; _user_id: string }
-        Returns: undefined
       }
     }
     Enums: {
