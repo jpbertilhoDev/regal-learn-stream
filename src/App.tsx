@@ -16,6 +16,8 @@ import NotFound from "./pages/NotFound";
 const AdminDashboard = lazy(() => import("./pages/admin/Dashboard"));
 const TrailsList = lazy(() => import("./pages/admin/trails/TrailsList"));
 const TrailForm = lazy(() => import("./pages/admin/trails/TrailForm"));
+const ModulesList = lazy(() => import("./pages/admin/modules/ModulesList"));
+const ModuleForm = lazy(() => import("./pages/admin/modules/ModuleForm"));
 
 const queryClient = new QueryClient();
 
@@ -52,6 +54,8 @@ const App = () => (
               </AdminRoute>
             } 
           />
+          
+          {/* Trails */}
           <Route 
             path="/admin/trails" 
             element={
@@ -78,6 +82,38 @@ const App = () => (
               <AdminRoute>
                 <Suspense fallback={<LoadingFallback />}>
                   <TrailForm />
+                </Suspense>
+              </AdminRoute>
+            } 
+          />
+          
+          {/* Modules */}
+          <Route 
+            path="/admin/modules" 
+            element={
+              <AdminRoute>
+                <Suspense fallback={<LoadingFallback />}>
+                  <ModulesList />
+                </Suspense>
+              </AdminRoute>
+            } 
+          />
+          <Route 
+            path="/admin/modules/new" 
+            element={
+              <AdminRoute>
+                <Suspense fallback={<LoadingFallback />}>
+                  <ModuleForm />
+                </Suspense>
+              </AdminRoute>
+            } 
+          />
+          <Route 
+            path="/admin/modules/:id/edit" 
+            element={
+              <AdminRoute>
+                <Suspense fallback={<LoadingFallback />}>
+                  <ModuleForm />
                 </Suspense>
               </AdminRoute>
             } 
