@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Play, TrendingUp, Sparkles, LogOut, User, Clock } from "lucide-react";
+import { Play, TrendingUp, Sparkles, LogOut, User, Clock, Network, Wallet } from "lucide-react";
 import { TrailCard } from "@/components/TrailCard";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
@@ -11,6 +11,10 @@ const AppHome = () => {
   const { user, signOut } = useAuth();
   const { data: trails, isLoading } = useTrails();
   const { data: continueWatching } = useContinueWatching();
+
+  // Filtrar trilhas por categoria (você pode ajustar os slugs conforme necessário)
+  const ecosystemTrails = trails?.slice(0, 3) || [];
+  const financialTrails = trails?.slice(0, 3) || [];
 
   return (
     <div className="min-h-screen">
@@ -91,6 +95,54 @@ const AppHome = () => {
                   Continuar
                 </Link>
               </Button>
+            </div>
+          </section>
+        )}
+
+        {/* Ecossistema Section */}
+        {!isLoading && ecosystemTrails.length > 0 && (
+          <section className="mb-16">
+            <div className="flex items-center gap-3 mb-6">
+              <Network className="w-5 h-5 text-primary" />
+              <h2 className="text-2xl font-display font-bold">Ecossistema</h2>
+            </div>
+            
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {ecosystemTrails.map((trail) => (
+                <TrailCard
+                  key={trail.id}
+                  id={trail.slug}
+                  title={trail.title}
+                  description={trail.description}
+                  image={trail.thumbnail_url || ""}
+                  duration={`${Math.floor(trail.duration / 60)}h ${trail.duration % 60}min`}
+                  lessonsCount={trail.lessons_count}
+                />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Financeiro Section */}
+        {!isLoading && financialTrails.length > 0 && (
+          <section className="mb-16">
+            <div className="flex items-center gap-3 mb-6">
+              <Wallet className="w-5 h-5 text-primary" />
+              <h2 className="text-2xl font-display font-bold">Financeiro</h2>
+            </div>
+            
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {financialTrails.map((trail) => (
+                <TrailCard
+                  key={trail.id}
+                  id={trail.slug}
+                  title={trail.title}
+                  description={trail.description}
+                  image={trail.thumbnail_url || ""}
+                  duration={`${Math.floor(trail.duration / 60)}h ${trail.duration % 60}min`}
+                  lessonsCount={trail.lessons_count}
+                />
+              ))}
             </div>
           </section>
         )}
