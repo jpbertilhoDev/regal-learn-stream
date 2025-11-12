@@ -10,15 +10,15 @@ interface StatCardProps {
 
 export const StatCard = ({ icon: Icon, label, value, iconColor = "text-primary" }: StatCardProps) => {
   return (
-    <Card>
+    <Card className="hover:shadow-lg transition-shadow">
       <CardContent className="p-6">
-        <div className="flex items-center gap-4">
-          <div className={`p-3 rounded-lg bg-primary/10 ${iconColor}`}>
+        <div className="flex items-start gap-4">
+          <div className={`p-3 rounded-xl bg-primary/10 ${iconColor}`}>
             <Icon className="w-6 h-6" />
           </div>
-          <div className="flex-1">
-            <p className="text-sm text-muted-foreground">{label}</p>
-            <p className="text-2xl font-bold">{value}</p>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm text-muted-foreground mb-1">{label}</p>
+            <p className="text-3xl font-bold truncate">{value}</p>
           </div>
         </div>
       </CardContent>

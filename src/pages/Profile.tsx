@@ -183,7 +183,7 @@ export default function Profile() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
           <p className="text-muted-foreground">Carregando perfil...</p>
@@ -193,212 +193,230 @@ export default function Profile() {
   }
 
   return (
-    <div className="min-h-screen bg-background p-4 md:p-8">
-      <div className="max-w-2xl mx-auto">
-        <Button
-          variant="ghost"
-          onClick={() => navigate("/app")}
-          className="mb-6"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Voltar
-        </Button>
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <div className="border-b border-border bg-card/50 backdrop-blur-sm">
+        <div className="container mx-auto px-4 py-6">
+          <Button
+            variant="ghost"
+            onClick={() => navigate("/app")}
+            className="mb-4"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Voltar
+          </Button>
+          
+          <div className="flex items-center gap-6">
+            <div className="relative">
+              <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center overflow-hidden border-4 border-background shadow-lg">
+                {(avatarPreview || profile?.avatar_url) ? (
+                  <img
+                    src={avatarPreview || profile?.avatar_url}
+                    alt="Avatar"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <User className="w-12 h-12 text-muted-foreground" />
+                )}
+              </div>
+            </div>
+            
+            <div className="flex-1">
+              <h1 className="text-3xl font-bold">{profile?.name || "Usuário"}</h1>
+              <p className="text-muted-foreground">{user?.email}</p>
+            </div>
+          </div>
+        </div>
+      </div>
 
+      <div className="container mx-auto px-4 py-8 max-w-7xl">
         {/* Stats Section */}
         {!statsLoading && stats && (
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Award className="w-5 h-5" />
-                Suas Estatísticas
-              </CardTitle>
-              <CardDescription>
-                Acompanhe seu progresso e conquistas
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                <StatCard
-                  icon={Clock}
-                  label="Tempo Assistido"
-                  value={formatWatchTime(stats.totalWatchTimeSeconds)}
-                  iconColor="text-blue-500"
-                />
-                <StatCard
-                  icon={PlayCircle}
-                  label="Aulas Iniciadas"
-                  value={stats.totalLessonsStarted}
-                  iconColor="text-purple-500"
-                />
-                <StatCard
-                  icon={CheckCircle}
-                  label="Aulas Completas"
-                  value={stats.completedLessons}
-                  iconColor="text-green-500"
-                />
-                <StatCard
-                  icon={Trophy}
-                  label="Trilhas Completas"
-                  value={stats.completedTrails}
-                  iconColor="text-yellow-500"
-                />
-              </div>
+          <div className="mb-8">
+            <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
+              <Award className="w-6 h-6 text-primary" />
+              Suas Estatísticas
+            </h2>
+            
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+              <StatCard
+                icon={Clock}
+                label="Tempo Assistido"
+                value={formatWatchTime(stats.totalWatchTimeSeconds)}
+                iconColor="text-blue-500"
+              />
+              <StatCard
+                icon={PlayCircle}
+                label="Aulas Iniciadas"
+                value={stats.totalLessonsStarted}
+                iconColor="text-purple-500"
+              />
+              <StatCard
+                icon={CheckCircle}
+                label="Aulas Completas"
+                value={stats.completedLessons}
+                iconColor="text-green-500"
+              />
+              <StatCard
+                icon={Trophy}
+                label="Trilhas Completas"
+                value={stats.completedTrails}
+                iconColor="text-yellow-500"
+              />
+            </div>
 
-              <div className="mt-8">
-                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                  <Award className="w-5 h-5 text-primary" />
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Award className="w-5 h-5" />
                   Badges Conquistadas
-                </h3>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                </CardTitle>
+                <CardDescription>
+                  Continue progredindo para desbloquear mais badges
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
                   {badges.map((badge, index) => (
                     <BadgeCard key={index} {...badge} />
                   ))}
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
         )}
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <User className="w-5 h-5" />
-              Informações Pessoais
-            </CardTitle>
-            <CardDescription>
-              Atualize seu nome e foto de perfil
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Form {...profileForm}>
-              <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-6">
-                <div className="flex flex-col items-center gap-4 mb-6">
-                  <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center overflow-hidden border-2 border-border">
-                    {(avatarPreview || profile?.avatar_url) ? (
-                      <img
-                        src={avatarPreview || profile?.avatar_url}
-                        alt="Avatar"
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <User className="w-12 h-12 text-muted-foreground" />
-                    )}
+        {/* Settings Section */}
+        <div className="grid lg:grid-cols-2 gap-6">
+          {/* Profile Info */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <User className="w-5 h-5" />
+                Informações Pessoais
+              </CardTitle>
+              <CardDescription>
+                Atualize seu nome e foto de perfil
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Form {...profileForm}>
+                <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-6">
+                  <div className="flex justify-center">
+                    <FileUpload
+                      onUpload={handleAvatarUpload}
+                      accept="image/*"
+                      maxSize={2}
+                      preview={avatarPreview || profile?.avatar_url || null}
+                      label="Foto de Perfil"
+                    />
                   </div>
-                  <FileUpload
-                    onUpload={handleAvatarUpload}
-                    accept="image/*"
-                    maxSize={2}
-                    preview={avatarPreview || profile?.avatar_url || null}
-                    label="Alterar Foto de Perfil"
+
+                  <FormField
+                    control={profileForm.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Nome Completo</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Seu nome completo" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
-                </div>
 
-                <FormField
-                  control={profileForm.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Nome</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Seu nome completo" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                  <div className="space-y-2">
+                    <FormLabel>Email</FormLabel>
+                    <Input value={user?.email || ""} disabled className="bg-muted" />
+                    <p className="text-xs text-muted-foreground">
+                      O email não pode ser alterado
+                    </p>
+                  </div>
 
-                <div className="space-y-2">
-                  <FormLabel>Email</FormLabel>
-                  <Input value={user?.email || ""} disabled />
-                  <p className="text-sm text-muted-foreground">
-                    O email não pode ser alterado
-                  </p>
-                </div>
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={updateProfile.isPending}
+                  >
+                    {updateProfile.isPending ? "Salvando..." : "Salvar Alterações"}
+                  </Button>
+                </form>
+              </Form>
+            </CardContent>
+          </Card>
 
-                <Button
-                  type="submit"
-                  className="w-full"
-                  disabled={updateProfile.isPending}
-                >
-                  {updateProfile.isPending ? "Salvando..." : "Salvar Alterações"}
-                </Button>
-              </form>
-            </Form>
-          </CardContent>
-        </Card>
+          {/* Password Change */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Lock className="w-5 h-5" />
+                Segurança
+              </CardTitle>
+              <CardDescription>
+                Altere sua senha de acesso
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Form {...passwordForm}>
+                <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-6">
+                  <FormField
+                    control={passwordForm.control}
+                    name="newPassword"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Nova Senha</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="password" 
+                            placeholder="Digite sua nova senha"
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Lock className="w-5 h-5" />
-              Alterar Senha
-            </CardTitle>
-            <CardDescription>
-              Atualize sua senha de acesso
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Form {...passwordForm}>
-              <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-6">
-                <FormField
-                  control={passwordForm.control}
-                  name="newPassword"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Nova Senha</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="password" 
-                          placeholder="Digite sua nova senha"
-                          {...field} 
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                  <FormField
+                    control={passwordForm.control}
+                    name="confirmPassword"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Confirmar Senha</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="password" 
+                            placeholder="Confirme sua nova senha"
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                <FormField
-                  control={passwordForm.control}
-                  name="confirmPassword"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Confirmar Nova Senha</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="password" 
-                          placeholder="Confirme sua nova senha"
-                          {...field} 
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                  <div className="bg-muted/50 border border-border rounded-lg p-4">
+                    <p className="text-sm font-medium mb-2">Requisitos da senha:</p>
+                    <ul className="text-xs text-muted-foreground space-y-1 list-disc list-inside">
+                      <li>Mínimo de 8 caracteres</li>
+                      <li>Letra maiúscula e minúscula</li>
+                      <li>Pelo menos um número</li>
+                    </ul>
+                  </div>
 
-                <div className="bg-muted/50 border border-border rounded-lg p-4">
-                  <p className="text-sm text-muted-foreground mb-2">
-                    <strong>Requisitos da senha:</strong>
-                  </p>
-                  <ul className="text-xs text-muted-foreground space-y-1 list-disc list-inside">
-                    <li>Mínimo de 8 caracteres</li>
-                    <li>Pelo menos uma letra maiúscula</li>
-                    <li>Pelo menos uma letra minúscula</li>
-                    <li>Pelo menos um número</li>
-                  </ul>
-                </div>
-
-                <Button
-                  type="submit"
-                  className="w-full"
-                  disabled={changePassword.isPending}
-                >
-                  {changePassword.isPending ? "Alterando..." : "Alterar Senha"}
-                </Button>
-              </form>
-            </Form>
-          </CardContent>
-        </Card>
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={changePassword.isPending}
+                  >
+                    {changePassword.isPending ? "Alterando..." : "Alterar Senha"}
+                  </Button>
+                </form>
+              </Form>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );
