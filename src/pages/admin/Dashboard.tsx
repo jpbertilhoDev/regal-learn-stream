@@ -1,11 +1,32 @@
 import { AdminLayout } from "@/components/admin/AdminLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useAdminStats } from "@/hooks/useAdminStats";
+import { useAdminAnalytics, useEngagementChart } from "@/hooks/useAdminAnalytics";
 import { useRecentActivity } from "@/hooks/useRecentActivity";
 import { useTrailAnalytics } from "@/hooks/useTrailAnalytics";
-import { Users, Target, Video, TrendingUp } from "lucide-react";
+import { AnalyticsCard } from "@/components/admin/AnalyticsCard";
+import { StatsCardSkeleton } from "@/components/LoadingSkeleton";
+import { 
+  Users, 
+  Target, 
+  Video, 
+  TrendingUp, 
+  Clock, 
+  Activity,
+  BarChart3,
+  Eye
+} from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 
 interface MetricCardProps {
   title: string;
@@ -38,16 +59,30 @@ const MetricCard = ({
 
 export default function Dashboard() {
   const { data: stats, isLoading: statsLoading } = useAdminStats();
+  const { data: analytics, isLoading: analyticsLoading } = useAdminAnalytics();
+  const { data: chartData, isLoading: chartLoading } = useEngagementChart();
   const { data: recentActivity } = useRecentActivity();
   const { data: trailAnalytics } = useTrailAnalytics();
 
-  if (statsLoading) {
+  const formatWatchTime = (seconds: number) => {
+    const hours = Math.floor(seconds / 3600);
+    if (hours > 0) return `${hours}h`;
+    const minutes = Math.floor(seconds / 60);
+    return `${minutes}min`;
+  };
+
+  if (statsLoading || analyticsLoading) {
     return (
       <AdminLayout>
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="text-center">
-            <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+        <div className="space-y-8">
+          <div>
+            <h1 className="text-4xl font-display font-bold mb-2">Dashboard</h1>
             <p className="text-muted-foreground">Carregando métricas...</p>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            {[1, 2, 3, 4].map((i) => (
+              <StatsCardSkeleton key={i} />
+            ))}
           </div>
         </div>
       </AdminLayout>
@@ -66,32 +101,135 @@ export default function Dashboard() {
           </p>
         </div>
 
-        {/* Metrics Grid */}
+        {/* Main Analytics Grid */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <MetricCard
-            title="Total de Usuários"
-            value={stats?.totalUsers ?? 0}
+          <AnalyticsCard
             icon={Users}
+            label="Total de Usuários"
+            value={analytics?.totalUsers ?? 0}
+            trend={{
+              value: 12,
+              isPositive: true,
+            }}
+            iconColor="text-blue-500"
           />
-          <MetricCard
-            title="Trilhas Publicadas"
-            value={stats?.totalTrails ?? 0}
-            icon={Target}
+          <AnalyticsCard
+            icon={Activity}
+            label="Usuários Ativos"
+            value={analytics?.activeUsers ?? 0}
+            trend={{
+              value: 8,
+              isPositive: true,
+            }}
+            iconColor="text-green-500"
           />
-          <MetricCard
-            title="Aulas Publicadas"
-            value={stats?.totalLessons ?? 0}
-            icon={Video}
+          <AnalyticsCard
+            icon={Clock}
+            label="Tempo Total Assistido"
+            value={formatWatchTime(analytics?.totalWatchTime ?? 0)}
+            iconColor="text-purple-500"
           />
-          <MetricCard
-            title="Taxa de Conclusão"
-            value={stats?.completionRate ?? 0}
+          <AnalyticsCard
             icon={TrendingUp}
-            suffix="%"
+            label="Taxa de Conclusão"
+            value={`${analytics?.completionRate ?? 0}%`}
+            trend={{
+              value: 5,
+              isPositive: true,
+            }}
+            iconColor="text-orange-500"
           />
         </div>
 
+        {/* Engagement Chart */}
+        {!chartLoading && chartData && (
+          <Card className="animate-fade-in">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <BarChart3 className="w-5 h-5" />
+                Engajamento dos Últimos 30 Dias
+              </CardTitle>
+              <CardDescription>
+                Número de visualizações de aulas por dia
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <XAxis 
+                    dataKey="date" 
+                    tickFormatter={(value) => {
+                      const date = new Date(value);
+                      return `${date.getDate()}/${date.getMonth() + 1}`;
+                    }}
+                    className="text-xs"
+                  />
+                  <YAxis className="text-xs" />
+                  <Tooltip 
+                    labelFormatter={(value) => {
+                      const date = new Date(value as string);
+                      return date.toLocaleDateString('pt-BR');
+                    }}
+                    contentStyle={{
+                      backgroundColor: 'hsl(var(--card))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '8px',
+                    }}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="views" 
+                    stroke="hsl(var(--primary))" 
+                    strokeWidth={2}
+                    dot={{ fill: 'hsl(var(--primary))' }}
+                    activeDot={{ r: 6 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        )}
+
         <div className="grid gap-6 lg:grid-cols-2">
+          {/* Top Lessons */}
+          <Card className="animate-fade-in">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Eye className="w-5 h-5" />
+                Aulas Mais Populares
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {analytics?.topLessons && analytics.topLessons.length > 0 ? (
+                <div className="space-y-4">
+                  {analytics.topLessons.map((lesson, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary font-bold text-sm">
+                          {index + 1}
+                        </div>
+                        <span className="font-medium">
+                          {lesson.title}
+                        </span>
+                      </div>
+                      <span className="text-sm text-muted-foreground">
+                        {lesson.views} views
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-muted-foreground text-center py-8">
+                  Nenhum dado disponível
+                </p>
+              )}
+            </CardContent>
+          </Card>
+
           {/* Most Watched Trails */}
           <Card>
             <CardHeader>

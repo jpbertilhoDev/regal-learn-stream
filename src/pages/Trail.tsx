@@ -1,6 +1,7 @@
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft, Play, Lock, CheckCircle2, Clock } from "lucide-react";
 import { useTrailDetails } from "@/hooks/useTrailDetails";
+import { SEO } from "@/components/SEO";
 
 const Trail = () => {
   const { slug } = useParams();
@@ -32,7 +33,14 @@ const Trail = () => {
   };
 
   return (
-    <div className="min-h-screen">
+    <>
+      <SEO
+        title={`${trail.title} - Trilha de Aprendizado`}
+        description={trail.description}
+        image={trail.thumbnail_url || undefined}
+      />
+      
+      <div className="min-h-screen">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
@@ -140,6 +148,7 @@ const Trail = () => {
         </div>
       </section>
     </div>
+    </>
   );
 };
 
