@@ -13,6 +13,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useUserBadges } from "@/hooks/useBadges";
 import { Progress } from "@/components/ui/progress";
 import { BadgeCard } from "@/components/BadgeCard";
+import { WeeklyChallenges } from "@/components/WeeklyChallenges";
 
 const AppHome = () => {
   const { user } = useAuth();
@@ -117,6 +118,11 @@ const AppHome = () => {
             </div>
           </section>
         )}
+
+          {/* Weekly Challenges */}
+          <section className="mb-16 animate-fade-in">
+            <WeeklyChallenges />
+          </section>
 
           {/* Recent Badges */}
           {recentBadges.length > 0 && (

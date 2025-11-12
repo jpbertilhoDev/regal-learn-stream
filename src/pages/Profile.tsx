@@ -246,121 +246,123 @@ export default function Profile() {
       </div>
 
       <div className="container mx-auto px-4 py-8 max-w-7xl">
-        {/* Stats Section */}
-        {!statsLoading && stats && (
-          <div className="mb-8">
-            <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
-              <Award className="w-6 h-6 text-primary" />
-              Suas Estatísticas
-            </h2>
-            
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-              <StatCard
-                icon={Clock}
-                label="Tempo Assistido"
-                value={formatWatchTime(stats.totalWatchTimeSeconds)}
-                iconColor="text-blue-500"
-              />
-              <StatCard
-                icon={PlayCircle}
-                label="Aulas Iniciadas"
-                value={stats.totalLessonsStarted}
-                iconColor="text-purple-500"
-              />
-              <StatCard
-                icon={CheckCircle}
-                label="Aulas Completas"
-                value={stats.completedLessons}
-                iconColor="text-green-500"
-              />
-              <StatCard
-                icon={Trophy}
-                label="Trilhas Completas"
-                value={stats.completedTrails}
-                iconColor="text-yellow-500"
-              />
-            </div>
+          {/* Stats Section */}
+          {!statsLoading && stats && (
+            <div className="mb-8">
+              <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
+                <Award className="w-6 h-6 text-primary" />
+                Suas Estatísticas
+              </h2>
+              
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                <StatCard
+                  icon={Clock}
+                  label="Tempo Assistido"
+                  value={formatWatchTime(stats.totalWatchTimeSeconds)}
+                  iconColor="text-blue-500"
+                />
+                <StatCard
+                  icon={PlayCircle}
+                  label="Aulas Iniciadas"
+                  value={stats.totalLessonsStarted}
+                  iconColor="text-purple-500"
+                />
+                <StatCard
+                  icon={CheckCircle}
+                  label="Aulas Completas"
+                  value={stats.completedLessons}
+                  iconColor="text-green-500"
+                />
+                <StatCard
+                  icon={Trophy}
+                  label="Trilhas Completas"
+                  value={stats.completedTrails}
+                  iconColor="text-yellow-500"
+                />
+              </div>
 
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="flex items-center gap-2">
-                      <Award className="w-5 h-5" />
-                      Badges Conquistadas
-                    </CardTitle>
-                    <CardDescription>
-                      Continue progredindo para desbloquear mais badges
-                    </CardDescription>
+              {/* Badges Section */}
+              <Card className="mb-8">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="flex items-center gap-2">
+                        <Award className="w-5 h-5" />
+                        Badges Conquistadas
+                      </CardTitle>
+                      <CardDescription>
+                        Continue progredindo para desbloquear mais badges
+                      </CardDescription>
+                    </div>
+                    {badgeStats && (
+                      <div className="text-right">
+                        <p className="text-2xl font-bold text-primary">
+                          {badgeStats.earnedBadges}/{badgeStats.totalBadges}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {badgeStats.totalPoints} pontos
+                        </p>
+                      </div>
+                    )}
                   </div>
-                  {badgeStats && (
-                    <div className="text-right">
-                      <p className="text-2xl font-bold text-primary">
-                        {badgeStats.earnedBadges}/{badgeStats.totalBadges}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {badgeStats.totalPoints} pontos
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent>
-                {badges.length === 0 ? (
-                  <p className="text-center text-muted-foreground py-8">
-                    Carregando badges...
-                  </p>
-                ) : (
-                  <>
-                    {/* Progress by Category */}
-                    <div className="mb-6 space-y-3">
-                      {["progress", "trails", "community", "special"].map((category) => {
-                        const categoryBadges = badges.filter((b) => b.category === category);
-                        const earnedInCategory = categoryBadges.filter((b) => b.unlocked).length;
-                        const categoryNames: Record<string, string> = {
-                          progress: "Progresso",
-                          trails: "Trilhas",
-                          community: "Comunidade",
-                          special: "Especiais",
-                        };
-                        
-                        if (categoryBadges.length === 0) return null;
-                        
-                        return (
-                          <div key={category}>
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="text-sm font-medium">
-                                {categoryNames[category]}
-                              </span>
-                              <span className="text-xs text-muted-foreground">
-                                {earnedInCategory}/{categoryBadges.length}
-                              </span>
+                </CardHeader>
+                <CardContent>
+                  {badges.length === 0 ? (
+                    <p className="text-center text-muted-foreground py-8">
+                      Carregando badges...
+                    </p>
+                  ) : (
+                    <>
+                      {/* Progress by Category */}
+                      <div className="mb-6 space-y-3">
+                        {["progress", "trails", "community", "special", "challenges"].map((category) => {
+                          const categoryBadges = badges.filter((b) => b.category === category);
+                          const earnedInCategory = categoryBadges.filter((b) => b.unlocked).length;
+                          const categoryNames: Record<string, string> = {
+                            progress: "Progresso",
+                            trails: "Trilhas",
+                            community: "Comunidade",
+                            special: "Especiais",
+                            challenges: "Desafios",
+                          };
+                          
+                          if (categoryBadges.length === 0) return null;
+                          
+                          return (
+                            <div key={category}>
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="text-sm font-medium">
+                                  {categoryNames[category]}
+                                </span>
+                                <span className="text-xs text-muted-foreground">
+                                  {earnedInCategory}/{categoryBadges.length}
+                                </span>
+                              </div>
+                              <div className="h-2 bg-muted rounded-full overflow-hidden">
+                                <div 
+                                  className="h-full bg-gradient-gold transition-all duration-500"
+                                  style={{ 
+                                    width: `${(earnedInCategory / categoryBadges.length) * 100}%` 
+                                  }}
+                                />
+                              </div>
                             </div>
-                            <div className="h-2 bg-muted rounded-full overflow-hidden">
-                              <div 
-                                className="h-full bg-gradient-gold transition-all duration-500"
-                                style={{ 
-                                  width: `${(earnedInCategory / categoryBadges.length) * 100}%` 
-                                }}
-                              />
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
+                          );
+                        })}
+                      </div>
 
-                    {/* Badges Grid */}
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-                      {badges.map((badge, index) => (
-                        <BadgeCard key={index} {...badge} />
-                      ))}
-                    </div>
-                  </>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        )}
+                      {/* Badges Grid */}
+                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+                        {badges.map((badge, index) => (
+                          <BadgeCard key={index} {...badge} />
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          )}
 
         {/* Settings Section */}
         <div className="grid lg:grid-cols-2 gap-6">
