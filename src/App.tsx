@@ -18,6 +18,8 @@ const TrailsList = lazy(() => import("./pages/admin/trails/TrailsList"));
 const TrailForm = lazy(() => import("./pages/admin/trails/TrailForm"));
 const ModulesList = lazy(() => import("./pages/admin/modules/ModulesList"));
 const ModuleForm = lazy(() => import("./pages/admin/modules/ModuleForm"));
+const LessonsList = lazy(() => import("./pages/admin/lessons/LessonsList"));
+const LessonForm = lazy(() => import("./pages/admin/lessons/LessonForm"));
 
 const queryClient = new QueryClient();
 
@@ -114,6 +116,38 @@ const App = () => (
               <AdminRoute>
                 <Suspense fallback={<LoadingFallback />}>
                   <ModuleForm />
+                </Suspense>
+              </AdminRoute>
+            } 
+          />
+
+          {/* Lessons */}
+          <Route 
+            path="/admin/lessons" 
+            element={
+              <AdminRoute>
+                <Suspense fallback={<LoadingFallback />}>
+                  <LessonsList />
+                </Suspense>
+              </AdminRoute>
+            } 
+          />
+          <Route 
+            path="/admin/lessons/new" 
+            element={
+              <AdminRoute>
+                <Suspense fallback={<LoadingFallback />}>
+                  <LessonForm />
+                </Suspense>
+              </AdminRoute>
+            } 
+          />
+          <Route 
+            path="/admin/lessons/:id/edit" 
+            element={
+              <AdminRoute>
+                <Suspense fallback={<LoadingFallback />}>
+                  <LessonForm />
                 </Suspense>
               </AdminRoute>
             } 
