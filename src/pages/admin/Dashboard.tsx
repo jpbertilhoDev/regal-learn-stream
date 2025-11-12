@@ -7,17 +7,19 @@ import { Users, Target, Video, TrendingUp } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
+interface MetricCardProps {
+  title: string;
+  value: number;
+  icon: any;
+  suffix?: string;
+}
+
 const MetricCard = ({
   title,
   value,
   icon: Icon,
   suffix = "",
-}: {
-  title: string;
-  value: number;
-  icon: any;
-  suffix?: string;
-}) => (
+}: MetricCardProps) => (
   <Card>
     <CardHeader className="flex flex-row items-center justify-between pb-2">
       <CardTitle className="text-sm font-medium text-muted-foreground">
