@@ -20,7 +20,18 @@ const AppHome = () => {
   const [selectedDifficulty, setSelectedDifficulty] = useState("all");
   const [selectedDuration, setSelectedDuration] = useState("all");
 
-  // Filter logic
+  // Category-specific trails (independent of filters)
+  const ecosystemTrails = useMemo(() => {
+    if (!trails) return [];
+    return trails.filter((trail) => trail.category === "ecossistema").slice(0, 3);
+  }, [trails]);
+
+  const financialTrails = useMemo(() => {
+    if (!trails) return [];
+    return trails.filter((trail) => trail.category === "financeiro").slice(0, 3);
+  }, [trails]);
+
+  // Filter logic for "Todas as Trilhas" section
   const filteredTrails = useMemo(() => {
     if (!trails) return [];
 
@@ -53,15 +64,6 @@ const AppHome = () => {
       return matchesSearch && matchesCategory && matchesDifficulty && matchesDuration;
     });
   }, [trails, searchQuery, selectedCategory, selectedDifficulty, selectedDuration]);
-
-  // Category-specific trails
-  const ecosystemTrails = useMemo(() => {
-    return filteredTrails.filter((trail) => trail.category === "ecossistema").slice(0, 3);
-  }, [filteredTrails]);
-
-  const financialTrails = useMemo(() => {
-    return filteredTrails.filter((trail) => trail.category === "financeiro").slice(0, 3);
-  }, [filteredTrails]);
 
   const handleClearFilters = () => {
     setSearchQuery("");
@@ -103,21 +105,6 @@ const AppHome = () => {
       </header>
 
       <main className="container mx-auto px-4 py-12">
-        {/* Search and Filters */}
-        <section className="mb-12">
-          <SearchAndFilters
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
-            selectedCategory={selectedCategory}
-            onCategoryChange={setSelectedCategory}
-            selectedDifficulty={selectedDifficulty}
-            onDifficultyChange={setSelectedDifficulty}
-            selectedDuration={selectedDuration}
-            onDurationChange={setSelectedDuration}
-            onClearFilters={handleClearFilters}
-          />
-        </section>
-
         {/* Continue Watching */}
         {continueWatching && (
           <section className="mb-16">
@@ -215,6 +202,21 @@ const AppHome = () => {
             </div>
           </section>
         )}
+
+        {/* Search and Filters */}
+        <section className="mb-12">
+          <SearchAndFilters
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            selectedCategory={selectedCategory}
+            onCategoryChange={setSelectedCategory}
+            selectedDifficulty={selectedDifficulty}
+            onDifficultyChange={setSelectedDifficulty}
+            selectedDuration={selectedDuration}
+            onDurationChange={setSelectedDuration}
+            onClearFilters={handleClearFilters}
+          />
+        </section>
 
         {/* Trails */}
         <section>
