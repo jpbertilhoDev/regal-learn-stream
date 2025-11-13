@@ -8,6 +8,7 @@ import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AdminRoute } from "./components/AdminRoute";
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
+import Success from "./pages/Success";
 import AppHome from "./pages/App";
 import Trail from "./pages/Trail";
 import Lesson from "./pages/Lesson";
@@ -44,6 +45,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/auth" element={<Auth />} />
+          <Route path="/success" element={<Success />} />
           <Route path="/app" element={<ProtectedRoute><AppHome /></ProtectedRoute>} />
           <Route path="/app/trail/:slug" element={<ProtectedRoute><Trail /></ProtectedRoute>} />
           <Route path="/app/lesson/:slug/:lessonId" element={<ProtectedRoute><Lesson /></ProtectedRoute>} />

@@ -54,14 +54,24 @@ export const useUpdateTrail = () => {
 
   return useMutation({
     mutationFn: async ({ id, ...trail }: any) => {
+      console.log("useUpdateTrail - Updating trail:", { id, trail });
+
+      // Remove lessons_count from update if it exists (it's calculated automatically)
+      const { lessons_count, ...updateData } = trail;
+
       const { data, error } = await supabase
         .from("trails")
-        .update(trail)
+        .update(updateData)
         .eq("id", id)
         .select()
         .single();
 
-      if (error) throw error;
+      console.log("useUpdateTrail - Result:", { data, error });
+
+      if (error) {
+        console.error("useUpdateTrail - Error details:", error);
+        throw error;
+      }
       return data;
     },
     onSuccess: () => {
@@ -73,8 +83,9 @@ export const useUpdateTrail = () => {
       });
     },
     onError: (error: Error) => {
+      console.error("useUpdateTrail - onError:", error);
       toast({
-        title: "Erro",
+        title: "Erro ao atualizar trilha",
         description: error.message,
         variant: "destructive",
       });

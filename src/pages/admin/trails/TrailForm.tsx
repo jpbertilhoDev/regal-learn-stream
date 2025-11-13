@@ -34,7 +34,7 @@ const trailSchema = z.object({
   duration: z.number().min(1, "Duração deve ser maior que 0"),
   order_index: z.number().min(0),
   is_published: z.boolean(),
-  thumbnail_url: z.string().url().optional().nullable(),
+  thumbnail_url: z.string().url().optional().or(z.literal("")).nullable(),
 });
 
 type TrailFormData = z.infer<typeof trailSchema>;
@@ -127,14 +127,27 @@ export default function TrailForm() {
 
   const onSubmit = async (data: TrailFormData) => {
     try {
-      if (isEditing) {
-        await updateTrail.mutateAsync({ id, ...data });
+      console.log("Submitting trail data:", { isEditing, id, data });
+
+      // Clean up thumbnail_url if it's empty string
+      const cleanData = {
+        ...data,
+        thumbnail_url: data.thumbnail_url || null,
+        lessons_count: 0, // Add default lessons_count for new trails
+      };
+
+      if (isEditing && id) {
+        console.log("Updating trail with ID:", id);
+        await updateTrail.mutateAsync({ id, ...cleanData });
       } else {
-        await createTrail.mutateAsync(data);
+        console.log("Creating new trail");
+        await createTrail.mutateAsync(cleanData);
       }
       navigate("/admin/trails");
     } catch (error) {
       console.error("Error saving trail:", error);
+      // Show error to user
+      alert(`Erro ao salvar trilha: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
     }
   };
 

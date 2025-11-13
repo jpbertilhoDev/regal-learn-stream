@@ -16,11 +16,23 @@ export const UserMenu = () => {
   const { user, signOut } = useAuth();
   const { data: profile } = useProfile();
 
+  // Get user initials for avatar fallback
+  const getInitials = () => {
+    if (profile?.name) {
+      const names = profile.name.split(" ");
+      if (names.length >= 2) {
+        return `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase();
+      }
+      return names[0].substring(0, 2).toUpperCase();
+    }
+    return user?.email?.substring(0, 2).toUpperCase() || "U";
+  };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-          <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center overflow-hidden border-2 border-border hover:border-primary transition-colors">
+        <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0">
+          <div className="h-10 w-10 rounded-full flex items-center justify-center overflow-hidden border-2 border-primary/30 hover:border-primary transition-all duration-300 hover:shadow-gold group cursor-pointer bg-card">
             {profile?.avatar_url ? (
               <img
                 src={profile.avatar_url}
@@ -28,7 +40,11 @@ export const UserMenu = () => {
                 className="h-full w-full object-cover"
               />
             ) : (
-              <User className="h-5 w-5 text-muted-foreground" />
+              <div className="h-full w-full flex items-center justify-center bg-gradient-to-br from-primary/20 to-primary/10 group-hover:from-primary/30 group-hover:to-primary/20 transition-all duration-300">
+                <span className="text-sm font-semibold text-primary">
+                  {getInitials()}
+                </span>
+              </div>
             )}
           </div>
         </Button>

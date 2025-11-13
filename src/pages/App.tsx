@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { Play, TrendingUp, Clock, Network, Wallet, Settings, Award } from "lucide-react";
-import { TrailCard } from "@/components/TrailCard";
 import { TrailCarousel } from "@/components/TrailCarousel";
+import { HeroCarousel } from "@/components/HeroCarousel";
 import { UserMenu } from "@/components/UserMenu";
 import { Button } from "@/components/ui/button";
 import { SEO } from "@/components/SEO";
@@ -46,12 +46,12 @@ const AppHome = () => {
       
       <div className="min-h-screen">
         {/* Header */}
-        <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-lg border-b border-border transition-all">
+        <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-lg transition-all">
           <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <Link to="/app" className="text-2xl font-display font-bold text-primary">
             MASTER CLASS
           </Link>
-          
+
           <nav className="flex items-center gap-6">
             <Link to="/app" className="text-sm font-medium hover:text-primary transition-colors">
               Início
@@ -66,6 +66,9 @@ const AppHome = () => {
           </nav>
         </div>
       </header>
+
+        {/* Hero Carousel */}
+        <HeroCarousel />
 
         <main className="container mx-auto px-4 py-12">
           {/* Continue Watching */}
@@ -166,43 +169,39 @@ const AppHome = () => {
           )}
 
           {/* All Trails */}
-          <section className="animate-fade-in" style={{ animationDelay: "0.2s" }}>
-            <div className="flex items-center gap-3 mb-6">
-              <TrendingUp className="w-5 h-5 text-primary" />
-              <h2 className="text-2xl font-display font-bold">Todas as Trilhas</h2>
+          {!isLoading && allTrails && allTrails.length > 0 && (
+            <div className="animate-fade-in" style={{ animationDelay: "0.2s" }}>
+              <TrailCarousel
+                trails={allTrails}
+                title="Todas as Trilhas"
+                icon={<TrendingUp className="w-5 h-5 text-primary" />}
+              />
             </div>
-            
-            {isLoading ? (
+          )}
+
+          {/* Empty State */}
+          {!isLoading && (!allTrails || allTrails.length === 0) && (
+            <section className="animate-fade-in">
+              <div className="text-center py-12 text-muted-foreground">
+                Nenhuma trilha disponível no momento.
+              </div>
+            </section>
+          )}
+
+          {/* Loading State */}
+          {isLoading && (
+            <section className="mb-16">
+              <div className="flex items-center gap-3 mb-6">
+                <TrendingUp className="w-5 h-5 text-primary" />
+                <h2 className="text-2xl font-display font-bold">Todas as Trilhas</h2>
+              </div>
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {[1, 2, 3, 4, 5, 6].map((i) => (
                   <TrailCardSkeleton key={i} />
                 ))}
               </div>
-            ) : allTrails && allTrails.length > 0 ? (
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {allTrails.map((trail, index) => (
-                  <div
-                    key={trail.id}
-                    className="animate-fade-in hover-scale"
-                    style={{ animationDelay: `${index * 0.05}s` }}
-                  >
-                    <TrailCard
-                      id={trail.slug}
-                      title={trail.title}
-                      description={trail.description}
-                      image={trail.thumbnail_url || ""}
-                      duration={`${Math.floor(trail.duration / 60)}h ${trail.duration % 60}min`}
-                      lessonsCount={trail.lessons_count}
-                    />
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-12 text-muted-foreground">
-                Nenhuma trilha disponível no momento.
-              </div>
-            )}
-          </section>
+            </section>
+          )}
         </main>
       </div>
     </>

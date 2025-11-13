@@ -51,8 +51,9 @@ export default {
         },
       },
       fontFamily: {
-        sans: ['Inter', 'sans-serif'],
-        display: ['Poppins', 'sans-serif'],
+        sans: ['Montserrat', 'sans-serif'],
+        display: ['Montserrat', 'sans-serif'],
+        serif: ['Playfair Display', 'serif'],
       },
       backgroundImage: {
         'gradient-gold': 'var(--gradient-gold)',
