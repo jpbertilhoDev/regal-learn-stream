@@ -35,7 +35,7 @@ Este guia te levará passo a passo para configurar o Stripe em **PRODUÇÃO** (p
    - ✅ **Publishable key** (começa com `pk_live_...`)
    - ✅ **Secret key** (começa com `sk_live_...`)
 
-🔴 **ATENÇÃO:** Você já tem estas chaves:
+🔴 **ATENÇÃO:** Guarde suas chaves em segurança:
 ```
 pk_live_[SUA_PUBLISHABLE_KEY_AQUI]
 sk_live_[SUA_SECRET_KEY_AQUI]
@@ -99,11 +99,11 @@ export const STRIPE_PRICES = {
 2. Dashboard → **Developers** → **Webhooks** → **Add endpoint**
 3. Preencha:
    ```
-   Endpoint URL: https://tzdatllacntstuaoabou.supabase.co/functions/v1/stripe-webhook
+   Endpoint URL: https://your-project-id.supabase.co/functions/v1/stripe-webhook
    Description: Webhook de PRODUÇÃO - Mentoria Master Class
    ```
 
-✅ **Você já criou este webhook!** O secret é:
+✅ **Após criar o webhook, copie o secret:**
 ```
 whsec_[SEU_WEBHOOK_SECRET_AQUI]
 ```
@@ -138,8 +138,8 @@ Crie o arquivo `.env.local` na raiz do projeto:
 
 ```bash
 # Supabase
-VITE_SUPABASE_URL=https://tzdatllacntstuaoabou.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR6ZGF0bGxhY250c3R1YW9hYm91Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzYwMDYsImV4cCI6MjA3ODUxMjAwNn0.SGB352z9MHTyY130M6T_tMNRm3pZfsQvRSeE5E0fbF8
+VITE_SUPABASE_URL=https://your-project-id.supabase.co
+VITE_SUPABASE_ANON_KEY=your-supabase-anon-key
 
 # Stripe (PRODUÇÃO - Pagamentos Reais)
 VITE_STRIPE_PUBLISHABLE_KEY=pk_live_[SUA_PUBLISHABLE_KEY_AQUI]
@@ -153,17 +153,17 @@ VITE_STRIPE_PUBLISHABLE_KEY=pk_live_[SUA_PUBLISHABLE_KEY_AQUI]
 2. Configure estas 4 variáveis:
 
 ```bash
-# 1. Stripe Secret Key (PRODUÇÃO - JÁ CONFIGURADO ✅)
+# 1. Stripe Secret Key (PRODUÇÃO)
 STRIPE_SECRET_KEY=sk_live_[SUA_SECRET_KEY_AQUI]
 
-# 2. Webhook Secret (JÁ CONFIGURADO ✅)
+# 2. Webhook Secret
 STRIPE_WEBHOOK_SECRET=whsec_[SEU_WEBHOOK_SECRET_AQUI]
 
-# 3. Supabase URL (FALTA ADICIONAR ⚠️)
-SUPABASE_URL=https://tzdatllacntstuaoabou.supabase.co
+# 3. Supabase URL
+SUPABASE_URL=https://your-project-id.supabase.co
 
-# 4. Service Role Key (FALTA ADICIONAR ⚠️)
-SUPABASE_SERVICE_ROLE_KEY=<VER ABAIXO COMO PEGAR>
+# 4. Service Role Key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 ```
 
 **Como pegar a Service Role Key:**
@@ -196,7 +196,7 @@ brew install supabase/tap/supabase
 supabase login
 
 # Link ao projeto
-supabase link --project-ref tzdatllacntstuaoabou
+supabase link --project-ref your-project-id
 ```
 
 ### 5.3 Deploy das Funções
@@ -279,7 +279,7 @@ export const STRIPE_PRICES = {
 stripe login
 
 # Escutar webhooks
-stripe listen --forward-to https://tzdatllacntstuaoabou.supabase.co/functions/v1/stripe-webhook
+stripe listen --forward-to https://your-project-id.supabase.co/functions/v1/stripe-webhook
 
 # Em outro terminal, disparar evento de teste
 stripe trigger checkout.session.completed
