@@ -29,24 +29,15 @@ export const StripeCheckoutButton = ({
   const [loading, setLoading] = useState(false);
 
   const handleClick = async () => {
-    // If user not logged in, redirect to auth first
-    if (!user) {
-      toast({
-        title: "Faça login primeiro",
-        description: "Você precisa estar logado para assinar.",
-      });
-      navigate("/auth");
-      return;
-    }
-
     try {
       setLoading(true);
 
-      // Get the price ID based on selection
+      // Get the price ID and mode based on selection
       const priceId = PRODUCTS.MASTER_CLASS[priceType].priceId;
+      const mode = priceType === "monthly" ? "subscription" : "payment";
 
-      // Create checkout session
-      const { url } = await createCheckoutSession(priceId);
+      // Create checkout session (without authentication required)
+      const { url } = await createCheckoutSession(priceId, mode);
 
       if (url) {
         // Redirect to Stripe Checkout

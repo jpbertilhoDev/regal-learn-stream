@@ -71,7 +71,7 @@ const Success = () => {
             Pagamento Confirmado! 🎉
           </h1>
           <p className="text-xl text-muted-foreground max-w-xl mx-auto">
-            Seu pagamento foi processado com sucesso. Bem-vindo à{" "}
+            Seu pagamento foi processado com sucesso e sua conta foi criada automaticamente. Bem-vindo à{" "}
             <span className="text-primary font-serif italic font-semibold">
               MASTER CLASS
             </span>

@@ -88,19 +88,11 @@ export const useSubscription = () => {
     }
   };
 
-  const createCheckoutSession = async (priceId: string) => {
+  const createCheckoutSession = async (priceId: string, mode: "subscription" | "payment" = "subscription") => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-
-      if (!session?.access_token) {
-        throw new Error("Not authenticated");
-      }
-
+      // Create anonymous checkout session (no auth required)
       const response = await supabase.functions.invoke("create-checkout", {
-        body: { priceId },
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
+        body: { priceId, mode, anonymous: true },
       });
 
       if (response.error) {

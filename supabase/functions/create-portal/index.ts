@@ -19,8 +19,8 @@ serve(async (req) => {
   }
 
   try {
-    const supabaseUrl = Deno.env.get("SUPABASE_URL") as string;
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") as string;
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") || "https://tzdatllacntstuaoabou.supabase.co";
+    const supabaseServiceKey = Deno.env.get("SERVICE_ROLE_KEY") as string;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Get user from auth header

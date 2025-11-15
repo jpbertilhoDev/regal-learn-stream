@@ -1,0 +1,33 @@
+===========================================
+CONFIGURAÇÃO FINAL - .env.local
+===========================================
+
+Crie um arquivo chamado ".env.local" na RAIZ do projeto
+com o seguinte conteúdo:
+
+-------------------------------------------
+# Supabase Configuration
+VITE_SUPABASE_URL=https://tzdatllacntstuaoabou.supabase.co
+VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR6ZGF0bGxhY250c3R1YW9hYm91Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzYwMDYsImV4cCI6MjA3ODUxMjAwNn0.SGB352z9MHTyY130M6T_tMNRm3pZfsQvRSeE5E0fbF8
+
+# Stripe Configuration (PRODUÇÃO - Pagamentos Reais)
+VITE_STRIPE_PUBLISHABLE_KEY=pk_live_51ST3LFIE9hS1TW2fvQgym2Fd0gvN57iQOwM06CnAGjJXjHpFwqFmayDao08EBBtbW91l6dYPTvhRncBD9qRXfpFi00XAAksIJG
+-------------------------------------------
+
+COMO CRIAR:
+1. Abra o VS Code ou editor de texto
+2. Crie um novo arquivo chamado ".env.local" (com o ponto no início)
+3. Cole o conteúdo acima
+4. Salve na raiz do projeto (mesma pasta do package.json)
+
+OU no PowerShell:
+@"
+# Supabase Configuration
+VITE_SUPABASE_URL=https://tzdatllacntstuaoabou.supabase.co
+VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR6ZGF0bGxhY250c3R1YW9hYm91Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzYwMDYsImV4cCI6MjA3ODUxMjAwNn0.SGB352z9MHTyY130M6T_tMNRm3pZfsQvRSeE5E0fbF8
+
+# Stripe Configuration (PRODUÇÃO - Pagamentos Reais)
+VITE_STRIPE_PUBLISHABLE_KEY=pk_live_51ST3LFIE9hS1TW2fvQgym2Fd0gvN57iQOwM06CnAGjJXjHpFwqFmayDao08EBBtbW91l6dYPTvhRncBD9qRXfpFi00XAAksIJG
+"@ | Out-File -FilePath .env.local -Encoding utf8
+
+

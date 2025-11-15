@@ -19,52 +19,16 @@ serve(async (req) => {
   }
 
   try {
-    const supabaseUrl = Deno.env.get("SUPABASE_URL") as string;
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") as string;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-    // Get user from auth header
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      throw new Error("Missing authorization header");
-    }
-
-    const token = authHeader.replace("Bearer ", "");
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
-
-    if (userError || !user) {
-      throw new Error("Invalid user token");
-    }
-
-    const { priceId, mode = "subscription" } = await req.json();
+    const { priceId, mode = "subscription", anonymous = false } = await req.json();
+    
+    console.log("Creating checkout session:", { priceId, mode, anonymous });
 
     if (!priceId) {
       throw new Error("Missing priceId");
     }
 
-    // Check if customer already exists
-    const { data: existingSubscription } = await supabase
-      .from("subscriptions")
-      .select("stripe_customer_id")
-      .eq("user_id", user.id)
-      .single();
-
-    let customerId = existingSubscription?.stripe_customer_id;
-
-    // Create customer if doesn't exist
-    if (!customerId) {
-      const customer = await stripe.customers.create({
-        email: user.email,
-        metadata: {
-          supabase_user_id: user.id,
-        },
-      });
-      customerId = customer.id;
-    }
-
-    // Create checkout session
-    const session = await stripe.checkout.sessions.create({
-      customer: customerId,
+    // Create checkout session (anonymous or authenticated)
+    const sessionConfig: any = {
       mode: mode as "subscription" | "payment",
       payment_method_types: ["card"],
       line_items: [
@@ -73,18 +37,65 @@ serve(async (req) => {
           quantity: 1,
         },
       ],
-      success_url: `${req.headers.get("origin")}/success?session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `${req.headers.get("origin")}/auth?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${req.headers.get("origin")}/`,
       allow_promotion_codes: true,
       billing_address_collection: "required",
-      customer_update: {
-        address: "auto",
-        name: "auto",
-      },
-      metadata: {
-        supabase_user_id: user.id,
-      },
+      customer_creation: "always", // Sempre cria customer no Stripe
+      locale: "pt-BR", // Interface em português
+    };
+
+    // Configurar parcelamento para pagamentos no Brasil
+    if (mode === "payment") {
+      sessionConfig.payment_method_options = {
+        card: {
+          installments: {
+            enabled: true, // Habilita parcelamento
+          },
+        },
+      };
+    }
+
+    // Se for anonymous (sem login), Stripe vai pedir email
+    if (anonymous) {
+      console.log("Anonymous checkout - Stripe will collect email");
+      sessionConfig.customer_email = undefined; // Stripe vai pedir
+    } else {
+      // Se tiver auth, usa o email do usuário
+      const authHeader = req.headers.get("Authorization");
+      if (authHeader) {
+        try {
+          const supabaseUrl = Deno.env.get("SUPABASE_URL") || "https://tzdatllacntstuaoabou.supabase.co";
+          const supabaseServiceKey = Deno.env.get("SERVICE_ROLE_KEY");
+          
+          if (!supabaseServiceKey) {
+            console.warn("SERVICE_ROLE_KEY not configured - proceeding with anonymous");
+          } else {
+            const supabase = createClient(supabaseUrl, supabaseServiceKey);
+            const token = authHeader.replace("Bearer ", "");
+            const { data: { user } } = await supabase.auth.getUser(token);
+            
+            if (user?.email) {
+              sessionConfig.customer_email = user.email;
+              sessionConfig.metadata = { supabase_user_id: user.id };
+              console.log("Using authenticated user email");
+            }
+          }
+        } catch (authError) {
+          console.warn("Auth error, proceeding with anonymous:", authError);
+        }
+      }
+    }
+
+    console.log("Creating Stripe session with config:", {
+      mode: sessionConfig.mode,
+      has_customer_email: !!sessionConfig.customer_email,
+      line_items_count: sessionConfig.line_items.length,
     });
+
+    const session = await stripe.checkout.sessions.create(sessionConfig);
+    
+    console.log("Stripe session created successfully:", session.id);
 
     return new Response(
       JSON.stringify({
@@ -96,11 +107,17 @@ serve(async (req) => {
         status: 200,
       }
     );
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error creating checkout session:", error);
+    console.error("Error stack:", error?.stack);
+    console.error("Error details:", JSON.stringify(error, null, 2));
+    
     return new Response(
       JSON.stringify({
-        error: error.message,
+        error: error?.message || String(error) || "Unknown error",
+        type: error?.type || "unknown",
+        details: error?.raw?.message || error?.toString() || "No details available",
+        stack: error?.stack?.split('\n')[0] || "No stack trace",
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },

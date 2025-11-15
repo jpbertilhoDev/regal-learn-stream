@@ -1,5 +1,5 @@
 import { Check, Sparkles, Wallet } from "lucide-react";
-import { StripeCheckoutButton } from "@/components/StripeCheckoutButton";
+import { PaymentOptions } from "@/components/PaymentOptions";
 import { ScrollReveal } from "./ScrollReveal";
 
 const benefits = [
@@ -77,15 +77,7 @@ export const Pricing = () => {
                     </div>
                   </div>
 
-                  {/* CTA Button */}
-                  <StripeCheckoutButton
-                    priceType="monthly"
-                    size="lg"
-                    className="w-full bg-gradient-gold hover:shadow-gold-lg shadow-gold transition-all duration-300 text-base py-7 h-auto font-bold uppercase tracking-wider"
-                  >
-                    <Sparkles className="w-5 h-5 mr-2" />
-                    Garantir Minha Vaga Agora
-                  </StripeCheckoutButton>
+                  {/* Payment Options will be shown in a separate section below */}
 
                   <p className="text-center text-xs text-muted-foreground">
                     Pagamento seguro via Hotmart
@@ -133,6 +125,13 @@ export const Pricing = () => {
                 </div>
               </div>
             </div>
+          </div>
+        </ScrollReveal>
+
+        {/* Payment Options Section */}
+        <ScrollReveal animation="scale-in" delay={0.4}>
+          <div className="max-w-5xl mx-auto mt-16">
+            <PaymentOptions amount={208} />
           </div>
         </ScrollReveal>
       </div>

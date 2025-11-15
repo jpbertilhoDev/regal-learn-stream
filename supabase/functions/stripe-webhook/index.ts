@@ -7,8 +7,8 @@ const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") as string, {
   httpClient: Stripe.createFetchHttpClient(),
 });
 
-const supabaseUrl = Deno.env.get("SUPABASE_URL") as string;
-const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") as string;
+const supabaseUrl = Deno.env.get("SUPABASE_URL") || "https://tzdatllacntstuaoabou.supabase.co";
+const supabaseServiceKey = Deno.env.get("SERVICE_ROLE_KEY") as string;
 
 serve(async (req) => {
   const signature = req.headers.get("stripe-signature");
@@ -20,7 +20,7 @@ serve(async (req) => {
 
   try {
     const body = await req.text();
-    const event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
+    const event = await stripe.webhooks.constructEventAsync(body, signature, webhookSecret);
 
     console.log(`Processing event: ${event.type}`);
 
@@ -102,8 +102,12 @@ async function handleCheckoutCompleted(
   session: Stripe.Checkout.Session
 ) {
   const customerId = session.customer as string;
-  const subscriptionId = session.subscription as string;
+  const subscriptionId = session.subscription as string | null;
+  const paymentIntentId = session.payment_intent as string | null;
   const customerEmail = session.customer_details?.email;
+  const mode = session.mode; // "payment" or "subscription"
+
+  console.log(`Checkout completed - Mode: ${mode}, Email: ${customerEmail}`);
 
   if (!customerEmail) {
     console.error("No customer email in checkout session");
@@ -119,6 +123,8 @@ async function handleCheckoutCompleted(
   if (!user) {
     // Create new user with a temporary password
     const tempPassword = crypto.randomUUID();
+    console.log(`Creating new user for email: ${customerEmail}`);
+    
     const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
       email: customerEmail,
       password: tempPassword,
@@ -134,37 +140,154 @@ async function handleCheckoutCompleted(
     }
 
     userId = newUser.user.id;
+    console.log(`User created successfully: ${userId}`);
+    
+    // Send password creation email for first access
+    console.log("Sending welcome email with password creation link...");
+    try {
+      // Generate password reset token
+      const { data: resetData, error: resetError } = await supabase.auth.admin.generateLink({
+        type: 'recovery',
+        email: customerEmail,
+      });
+      
+      if (resetError) {
+        console.error("Error generating password creation link:", resetError);
+        throw resetError;
+      }
+
+      // Send email via Resend
+      const resendApiKey = Deno.env.get("RESEND_API_KEY") || "re_UfY3YF1r_HscB7Ah8EURvFWeY39Cvypue";
+      const productionUrl = Deno.env.get("PRODUCTION_URL") || "http://localhost:8081";
+      
+      // Extract token from the generated link
+      const actionLink = resetData.properties.action_link;
+      const resetUrl = actionLink.replace(/^.*\/auth\/v1\/verify/, `${productionUrl}/create-password`);
+      
+      // Send email via Resend API
+      const emailResponse = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${resendApiKey}`,
+        },
+        body: JSON.stringify({
+          from: "MASTER CLASS <onboarding@resend.dev>",
+          to: [customerEmail],
+          subject: "🎉 Bem-vindo à MASTER CLASS - Crie sua senha agora!",
+          html: `
+            <h1>Bem-vindo à MASTER CLASS!</h1>
+            <p>Seu pagamento foi confirmado com sucesso!</p>
+            <p>Para acessar a plataforma, clique no botão abaixo para criar sua senha:</p>
+            <a href="${resetUrl}" style="background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%); color: #000000; text-decoration: none; padding: 16px 40px; border-radius: 50px; font-size: 18px; font-weight: 800; display: inline-block;">
+              Criar Minha Senha
+            </a>
+            <p>Este link expira em 1 hora.</p>
+            <p>Se você não fez este pagamento, ignore este email.</p>
+          `,
+        }),
+      });
+
+      if (!emailResponse.ok) {
+        const errorText = await emailResponse.text();
+        console.error("Error sending email via Resend:", errorText);
+        throw new Error(`Resend API error: ${errorText}`);
+      }
+
+      const emailResult = await emailResponse.json();
+      console.log("Welcome email sent successfully via Resend:", emailResult);
+      
+    } catch (emailError) {
+      console.error("Error sending welcome email:", emailError);
+      // Don't throw - user was created, they can use "forgot password"
+    }
   } else {
     userId = user.id;
+    console.log(`User already exists: ${userId}`);
   }
 
-  // Get subscription details from Stripe
-  const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+  // Handle subscription mode (recurring payment)
+  if (mode === "subscription" && subscriptionId) {
+    console.log(`Processing subscription: ${subscriptionId}`);
+    
+    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
 
-  // Create or update subscription record
-  const { error: subError } = await supabase.from("subscriptions").upsert({
-    user_id: userId,
-    stripe_customer_id: customerId,
-    stripe_subscription_id: subscriptionId,
-    stripe_price_id: subscription.items.data[0].price.id,
-    stripe_product_id: subscription.items.data[0].price.product as string,
-    status: subscription.status,
-    plan_type: subscription.items.data[0].price.recurring?.interval || "one_time",
-    current_period_start: new Date(subscription.current_period_start * 1000),
-    current_period_end: new Date(subscription.current_period_end * 1000),
-    cancel_at_period_end: subscription.cancel_at_period_end,
-    trial_start: subscription.trial_start
-      ? new Date(subscription.trial_start * 1000)
-      : null,
-    trial_end: subscription.trial_end ? new Date(subscription.trial_end * 1000) : null,
-  });
+    const { error: subError } = await supabase.from("subscriptions").upsert({
+      user_id: userId,
+      stripe_customer_id: customerId,
+      stripe_subscription_id: subscriptionId,
+      stripe_price_id: subscription.items.data[0].price.id,
+      stripe_product_id: subscription.items.data[0].price.product as string,
+      status: subscription.status,
+      plan_type: subscription.items.data[0].price.recurring?.interval || "month",
+      current_period_start: new Date(subscription.current_period_start * 1000),
+      current_period_end: new Date(subscription.current_period_end * 1000),
+      cancel_at_period_end: subscription.cancel_at_period_end,
+      trial_start: subscription.trial_start ? new Date(subscription.trial_start * 1000) : null,
+      trial_end: subscription.trial_end ? new Date(subscription.trial_end * 1000) : null,
+    }, { onConflict: 'user_id' }); // Resolver conflito por user_id
 
-  if (subError) {
-    console.error("Error creating subscription:", subError);
-    throw subError;
+    if (subError) {
+      console.error("Error creating subscription:", subError);
+      throw subError;
+    }
+
+    console.log(`Subscription created for user ${userId}`);
   }
+  
+  // Handle payment mode (one-time payment)
+  else if (mode === "payment" && paymentIntentId) {
+    console.log(`Processing one-time payment: ${paymentIntentId}`);
+    
+    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+    const lineItems = await stripe.checkout.sessions.listLineItems(session.id);
+    const priceId = lineItems.data[0]?.price?.id;
+    const productId = lineItems.data[0]?.price?.product as string;
 
-  console.log(`Subscription created for user ${userId}`);
+    // Create a "lifetime" subscription for one-time payments
+    const { error: subError } = await supabase.from("subscriptions").upsert({
+      user_id: userId,
+      stripe_customer_id: customerId,
+      stripe_subscription_id: `onetime_${paymentIntentId}`, // Unique ID for one-time
+      stripe_price_id: priceId,
+      stripe_product_id: productId,
+      status: "active",
+      plan_type: "lifetime", // Mark as lifetime access
+      current_period_start: new Date(),
+      current_period_end: new Date('2099-12-31'), // Lifetime access
+      cancel_at_period_end: false,
+      trial_start: null,
+      trial_end: null,
+    }, { onConflict: 'user_id' }); // Resolver conflito por user_id
+
+    if (subError) {
+      console.error("Error creating one-time payment record:", subError);
+      throw subError;
+    }
+
+    // Also record the transaction
+    const { error: txError } = await supabase.from("transactions").insert({
+      user_id: userId,
+      stripe_customer_id: customerId,
+      stripe_payment_intent_id: paymentIntentId,
+      amount: paymentIntent.amount / 100, // Convert from cents
+      currency: paymentIntent.currency.toUpperCase(),
+      status: paymentIntent.status,
+      payment_method: paymentIntent.payment_method_types[0],
+    });
+
+    if (txError) {
+      console.error("Error recording transaction:", txError);
+      // Don't throw - subscription was created
+    }
+
+    console.log(`One-time payment processed for user ${userId}`);
+  }
+  
+  else {
+    console.error(`Invalid session mode or missing IDs - Mode: ${mode}, Subscription: ${subscriptionId}, PaymentIntent: ${paymentIntentId}`);
+    throw new Error("Invalid checkout session configuration");
+  }
 }
 
 async function handleSubscriptionUpdated(

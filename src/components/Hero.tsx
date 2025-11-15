@@ -38,7 +38,7 @@ export const Hero = () => {
           {/* CTAs */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <StripeCheckoutButton
-              priceType="monthly"
+              priceType="oneTime"
               size="lg"
               className="bg-gradient-gold hover:shadow-gold-lg shadow-gold transition-all duration-300 text-base px-10 py-7 h-auto font-bold uppercase tracking-wider group"
             >
