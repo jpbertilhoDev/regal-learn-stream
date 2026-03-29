@@ -43,22 +43,152 @@ const Auth = () => {
     // Prevenir múltiplos cliques
     if (isLoading || emailSent) return;
     
+    // Validar email
+    if (!email || !email.includes("@")) {
+      toast({
+        title: "❌ Email inválido",
+        description: "Por favor, digite um email válido.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setIsLoading(true);
 
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/create-password`,
-      });
-
-      if (error) {
-        // Tratar erro de rate limit de forma amigável
-        if (error.message.includes("429") || error.message.includes("rate limit")) {
-          throw new Error("Muitas tentativas. Aguarde 10 minutos e tente novamente.");
-        }
-        throw error;
+      // Verificar se as variáveis de ambiente estão configuradas
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      
+      if (!supabaseUrl || !supabaseKey) {
+        throw new Error("Configuração do sistema incompleta. Verifique as variáveis de ambiente.");
       }
 
-      // Marcar email como enviado
+      const redirectUrl = `${window.location.origin}/create-password`;
+      
+      // Tentar método normal primeiro
+      let error: any = null;
+      try {
+        const result = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: redirectUrl,
+        });
+        error = result.error;
+      } catch (err: any) {
+        // Capturar erros de rede ou outros erros não tratados
+        error = err;
+      }
+
+      // Se der erro 429 (rate limit), tentar Edge Function como fallback
+      const isRateLimit = error && (
+        error.message?.includes("429") || 
+        error.message?.includes("rate limit") || 
+        error.status === 429 ||
+        error.code === "429" ||
+        (error.message?.toLowerCase().includes("too many requests"))
+      );
+
+      if (isRateLimit) {
+        console.log("Rate limit detectado, tentando Edge Function como fallback...");
+        
+        try {
+          const functionUrl = `${supabaseUrl}/functions/v1/reset-password`;
+          const response = await fetch(functionUrl, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${supabaseKey}`,
+              "apikey": supabaseKey,
+            },
+            body: JSON.stringify({ email }),
+          }).catch((fetchError) => {
+            // Se der erro de rede (função não existe ou não acessível)
+            console.error("Erro ao chamar Edge Function:", fetchError);
+            throw new Error("Função de recuperação não disponível. Aguarde 10 minutos e tente novamente. Alternativa: acesse https://supabase.com/dashboard/project/tzdatllacntstuaoabou/auth/users para resetar sua senha manualmente.");
+          });
+
+          // Verificar se a função existe (404 = não deployada)
+          if (response.status === 404) {
+            throw new Error("Função de recuperação não disponível. Aguarde 10 minutos e tente novamente, ou use o dashboard do Supabase.");
+          }
+
+          // Verificar se houve erro de rede
+          if (!response.ok && response.status !== 429) {
+            const errorText = await response.text();
+            let result;
+            try {
+              result = JSON.parse(errorText);
+            } catch {
+              throw new Error("Erro ao conectar com o servidor. Tente novamente em alguns minutos.");
+            }
+
+            if (result.code === "RATE_LIMIT") {
+              throw new Error("Muitas tentativas. Aguarde 10 minutos e tente novamente.");
+            }
+            if (result.code === "USER_NOT_FOUND") {
+              throw new Error("Email não encontrado. Verifique se digitou corretamente.");
+            }
+            throw new Error(result.error || "Erro ao enviar email de recuperação.");
+          }
+
+          // Se ainda der 429 na Edge Function, mostrar mensagem clara
+          if (response.status === 429) {
+            throw new Error("Muitas tentativas. Aguarde 10 minutos e tente novamente. Você pode também usar o dashboard do Supabase para resetar sua senha.");
+          }
+
+          const result = await response.json();
+
+          // Sucesso via Edge Function
+          setEmailSent(true);
+          toast({
+            title: "✅ Email enviado com sucesso!",
+            description: "Verifique sua caixa de entrada (e SPAM) nos próximos minutos.",
+          });
+          
+          setTimeout(() => {
+            setEmailSent(false);
+          }, 60000);
+          
+          return;
+        } catch (fallbackError: any) {
+          // Se a Edge Function falhar (não existe, erro de rede, etc)
+          console.error("Erro na Edge Function:", fallbackError);
+          
+          // Se for erro de rede/Failed to fetch, mostrar mensagem específica
+          if (fallbackError.message?.includes("Failed to fetch") || 
+              fallbackError.message?.includes("NetworkError") ||
+              fallbackError.name === "TypeError" ||
+              fallbackError.message?.includes("não disponível")) {
+            throw new Error(fallbackError.message || "Muitas tentativas detectadas. Aguarde 10 minutos e tente novamente. Alternativa: acesse https://supabase.com/dashboard/project/tzdatllacntstuaoabou/auth/users para resetar sua senha manualmente.");
+          }
+          
+          // Para outros erros, usar a mensagem do erro
+          throw new Error(fallbackError.message || "Muitas tentativas. Aguarde 10 minutos e tente novamente.");
+        }
+      }
+
+      if (error) {
+        // Tratar erro específico de rate limit de email
+        if (error.message?.includes("email rate limit exceeded") || 
+            error.message?.includes("rate limit exceeded") ||
+            error.message?.toLowerCase().includes("email rate limit")) {
+          throw new Error("Limite de envio de emails excedido. O Supabase limita o número de emails por hora. Aguarde 1 hora e tente novamente. Alternativa: acesse https://supabase.com/dashboard/project/tzdatllacntstuaoabou/auth/users para resetar sua senha manualmente.");
+        }
+        
+        // Tratar outros erros específicos
+        if (error.message?.includes("Failed to fetch") || error.message?.includes("NetworkError")) {
+          throw new Error("Erro de conexão. Verifique sua internet e tente novamente.");
+        }
+        
+        if (error.message?.includes("Invalid email")) {
+          throw new Error("Email inválido. Verifique se digitou corretamente.");
+        }
+        
+        // Para outros erros, mostrar mensagem genérica mas útil
+        console.error("Erro ao resetar senha:", error);
+        throw new Error(error.message || "Não foi possível enviar o email. Tente novamente em alguns minutos.");
+      }
+
+      // Sucesso via método normal
       setEmailSent(true);
 
       toast({
@@ -72,9 +202,21 @@ const Auth = () => {
       }, 60000);
       
     } catch (error: any) {
+      console.error("Erro completo:", error);
+      
+      // Tratar erro específico de rate limit de email
+      let errorMessage = error.message || "Tente novamente em alguns minutos.";
+      
+      if (error.message?.includes("email rate limit exceeded") || 
+          error.message?.includes("rate limit exceeded") ||
+          error.message?.toLowerCase().includes("email rate limit") ||
+          error.message?.includes("magiclink")) {
+        errorMessage = "Limite de envio de emails excedido. O Supabase limita o número de emails por hora. Aguarde 1 hora e tente novamente. Alternativa: acesse https://supabase.com/dashboard/project/tzdatllacntstuaoabou/auth/users para resetar sua senha manualmente.";
+      }
+      
       toast({
         title: "❌ Erro ao enviar email",
-        description: error.message || "Tente novamente em alguns minutos.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {

@@ -24,9 +24,9 @@ BEGIN
   END IF;
 END $$;
 
--- Alternative: If you know the exact email, uncomment and use this instead:
--- INSERT INTO public.user_roles (user_id, role)
--- SELECT id, 'admin'::app_role
--- FROM auth.users
--- WHERE email = 'jpbertilhopt@exemplo.com'
--- ON CONFLICT (user_id, role) DO NOTHING;
+-- Add admin role for exact email (jpbertilhopt@gmail.com)
+INSERT INTO public.user_roles (user_id, role)
+SELECT id, 'admin'::app_role
+FROM auth.users
+WHERE email = 'jpbertilhopt@gmail.com'
+ON CONFLICT (user_id, role) DO NOTHING;
